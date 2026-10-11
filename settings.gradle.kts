@@ -26,4 +26,6 @@ include(
     ":provider-slipok",
     ":store-redis",
     ":spring-boot-starter",
+    ":examples:java",
+    ":examples:spring-boot",
 )

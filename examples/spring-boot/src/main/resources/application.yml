@@ -1,0 +1,18 @@
+slipverify:
+  web:
+    enabled: true            # exposes POST /slips/verify
+    max-request-bytes: 7340032
+  duplicate:
+    store: memory            # use "redis" + redis-uri with the slipverify-store-redis module
+  provider-order: easyslip,slipok
+  easyslip:
+    api-key: ${EASYSLIP_API_KEY:}   # blank = provider disabled, result stays UNVERIFIED
+# Set the key through the environment, never in this file:
+#   export EASYSLIP_API_KEY=...
+spring:
+  servlet:
+    multipart:
+      enabled: false
+server:
+  tomcat:
+    max-swallow-size: 8MB

@@ -20,7 +20,7 @@ spotless {
         ktlint(ktlintVersion)
     }
     kotlinGradle {
-        target("*.gradle.kts", "*/*.gradle.kts")
+        target("*.gradle.kts", "*/*.gradle.kts", "examples/*/*.gradle.kts")
         ktlint(ktlintVersion)
     }
     java {
@@ -31,7 +31,7 @@ spotless {
 
 apiValidation {
     // Examples consume the library; they are not part of its public API.
-    // ignoredProjects.addAll(listOf("java", "spring-boot")) // enabled when :examples exist
+    ignoredProjects.addAll(listOf("java", "spring-boot"))
 }
 
 // Library modules share one configuration (the equivalent of a convention plugin).

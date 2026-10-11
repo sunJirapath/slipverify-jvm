@@ -103,6 +103,14 @@ class StarterTest {
     }
 
     @Test
+    fun `blank keys leave providers off`() {
+        runner.withPropertyValues("slipverify.easyslip.api-key=", "slipverify.slipok.api-key=k", "slipverify.slipok.branch-id= ").run { ctx ->
+            assertEquals(null, ctx.startupFailure)
+            assertTrue(ctx.getBeansOfType(SlipProvider::class.java).isEmpty())
+        }
+    }
+
+    @Test
     fun `duplicate checking can be switched off`() {
         runner.withPropertyValues(easy, easyUrl(), "slipverify.duplicate.enabled=false").run { ctx ->
             val v = ctx.getBean(SlipVerifier::class.java)

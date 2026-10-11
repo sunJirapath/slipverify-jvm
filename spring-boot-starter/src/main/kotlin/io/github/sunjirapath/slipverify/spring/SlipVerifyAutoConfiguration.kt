@@ -22,8 +22,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Condition
+import org.springframework.context.annotation.ConditionContext
+import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.type.AnnotatedTypeMetadata
 import org.springframework.util.ClassUtils
+import org.springframework.util.StringUtils
 
 /** Wires a [SlipVerifier] from `slipverify.*` properties and whatever providers are on the classpath. */
 @AutoConfiguration(
@@ -107,7 +112,7 @@ public class SlipVerifyAutoConfiguration {
     public class EasySlipConfiguration {
         @Bean
         @ConditionalOnMissingBean(name = ["easySlipProvider"])
-        @ConditionalOnProperty(prefix = "slipverify.easyslip", name = ["api-key"])
+        @Conditional(HasText.EasySlip::class)
         public fun easySlipProvider(props: SlipVerifyProperties): SlipProvider {
             val e = props.easyslip
             return EasySlipProvider(
@@ -127,7 +132,7 @@ public class SlipVerifyAutoConfiguration {
     public class SlipOkConfiguration {
         @Bean
         @ConditionalOnMissingBean(name = ["slipOkProvider"])
-        @ConditionalOnProperty(prefix = "slipverify.slipok", name = ["api-key", "branch-id"])
+        @Conditional(HasText.SlipOk::class)
         public fun slipOkProvider(props: SlipVerifyProperties): SlipProvider {
             val s = props.slipok
             return SlipOkProvider(
@@ -170,4 +175,26 @@ public class SlipVerificationService(
 ) {
     public fun verify(request: SlipRequest): SlipVerificationResult =
         verifier.verify(request).also { metrics.verification(it) }
+}
+
+/** A provider is enabled only by non-blank settings, so an unset `${ENV_VAR:}` placeholder means "off". */
+internal object HasText {
+    private fun has(
+        context: ConditionContext,
+        vararg keys: String,
+    ) = keys.all { StringUtils.hasText(context.environment.getProperty(it)) }
+
+    class EasySlip : Condition {
+        override fun matches(
+            context: ConditionContext,
+            metadata: AnnotatedTypeMetadata,
+        ) = has(context, "slipverify.easyslip.api-key")
+    }
+
+    class SlipOk : Condition {
+        override fun matches(
+            context: ConditionContext,
+            metadata: AnnotatedTypeMetadata,
+        ) = has(context, "slipverify.slipok.api-key", "slipverify.slipok.branch-id")
+    }
 }
