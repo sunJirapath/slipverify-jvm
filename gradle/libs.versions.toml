@@ -1,0 +1,34 @@
+[versions]
+kotlin = "2.4.21"
+kover = "0.9.11"
+binaryCompatibilityValidator = "0.18.2"
+mavenPublish = "0.37.0"
+# jqwik 1.10.x is built against JUnit Platform 1.14.x, so stay on the matching Jupiter 5.14.x line.
+junit = "5.14.4"
+jqwik = "1.10.2"
+spotless = "8.10.4"
+ktlint = "1.8.0"
+googleJavaFormat = "1.36.1"
+detekt = "1.23.8"
+dokka = "2.2.0"
+promptparse = "0.1.0"
+zxing = "3.5.4"
+
+[libraries]
+promptparse = { module = "io.github.sunjirapath:promptparse", version.ref = "promptparse" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binaryCompatibilityValidator" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

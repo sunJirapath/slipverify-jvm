@@ -1,0 +1,223 @@
+public abstract interface class io/github/sunjirapath/slipverify/DuplicateStore {
+	public abstract fun markIfAbsent (Ljava/lang/String;Ljava/time/Duration;)Z
+}
+
+public final class io/github/sunjirapath/slipverify/ExtractionResult {
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Lio/github/sunjirapath/slipverify/ReasonCode;[B)V
+	public final fun getCandidates ()Ljava/util/List;
+	public final fun getFailure ()Lio/github/sunjirapath/slipverify/ReasonCode;
+	public final fun getImage ()[B
+	public final fun getSlipPayload ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/InMemoryDuplicateStore : io/github/sunjirapath/slipverify/DuplicateStore {
+	public static final field PURGE_THRESHOLD I
+	public fun <init> ()V
+	public fun <init> (Ljava/time/Clock;)V
+	public synthetic fun <init> (Ljava/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun markIfAbsent (Ljava/lang/String;Ljava/time/Duration;)Z
+}
+
+public final class io/github/sunjirapath/slipverify/Masking {
+	public static final field INSTANCE Lio/github/sunjirapath/slipverify/Masking;
+	public static final fun account (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun name (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun party (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/ProviderOutcome {
+	public static final field Companion Lio/github/sunjirapath/slipverify/ProviderOutcome$Companion;
+	public synthetic fun <init> (Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;Lio/github/sunjirapath/slipverify/VerifiedSlip;Lio/github/sunjirapath/slipverify/ReasonCode;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getKind ()Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public final fun getReason ()Lio/github/sunjirapath/slipverify/ReasonCode;
+	public final fun getSlip ()Lio/github/sunjirapath/slipverify/VerifiedSlip;
+	public static final fun notFound ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public static final fun rejected (Lio/github/sunjirapath/slipverify/ReasonCode;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public fun toString ()Ljava/lang/String;
+	public static final fun unavailable ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public static final fun unavailable (Lio/github/sunjirapath/slipverify/ReasonCode;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public static final fun unsupported ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public static final fun verified (Lio/github/sunjirapath/slipverify/VerifiedSlip;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+}
+
+public final class io/github/sunjirapath/slipverify/ProviderOutcome$Companion {
+	public final fun notFound ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public final fun rejected (Lio/github/sunjirapath/slipverify/ReasonCode;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public final fun unavailable ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public final fun unavailable (Lio/github/sunjirapath/slipverify/ReasonCode;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public static synthetic fun unavailable$default (Lio/github/sunjirapath/slipverify/ProviderOutcome$Companion;Lio/github/sunjirapath/slipverify/ReasonCode;ILjava/lang/Object;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public final fun unsupported ()Lio/github/sunjirapath/slipverify/ProviderOutcome;
+	public final fun verified (Lio/github/sunjirapath/slipverify/VerifiedSlip;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+}
+
+public final class io/github/sunjirapath/slipverify/ProviderOutcomeKind : java/lang/Enum {
+	public static final field NOT_FOUND Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static final field REJECTED Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static final field UNAVAILABLE Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static final field UNSUPPORTED Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static final field VERIFIED Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+	public static fun values ()[Lio/github/sunjirapath/slipverify/ProviderOutcomeKind;
+}
+
+public final class io/github/sunjirapath/slipverify/ProviderQuery {
+	public fun <init> (Lio/github/sunjirapath/slipverify/SlipType;Ljava/lang/String;[BLjava/math/BigDecimal;)V
+	public final fun getExpectedAmount ()Ljava/math/BigDecimal;
+	public final fun getImage ()[B
+	public final fun getPayload ()Ljava/lang/String;
+	public final fun getSlipType ()Lio/github/sunjirapath/slipverify/SlipType;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/sunjirapath/slipverify/QrExtractor {
+	public abstract fun extract (Ljava/lang/String;Ljava/util/function/Predicate;)Lio/github/sunjirapath/slipverify/ExtractionResult;
+}
+
+public final class io/github/sunjirapath/slipverify/ReasonCode : java/lang/Enum {
+	public static final field AMOUNT_MISMATCH Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field CRC_AUTOFIXED Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field CRC_INVALID Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field DUPLICATE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field EMPTY_INPUT Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field IMAGE_DECODE_TIMEOUT Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field IMAGE_DIMENSIONS_TOO_LARGE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field IMAGE_TOO_LARGE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field INVALID_BASE64 Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field NOT_A_SLIP_QR Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field NO_PROVIDER_CONFIGURED Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field NO_QR_FOUND Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_AUTH_ERROR Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_ERROR Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_NOT_FOUND Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_PENDING Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_QUOTA_EXCEEDED Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_RATE_LIMITED Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_TIMEOUT Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field PROVIDER_UNSUPPORTED_SLIP_TYPE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field RECEIVER_MISMATCH Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field TIME_UNAVAILABLE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field TOO_OLD Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field UNSUPPORTED_IMAGE_FORMAT Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isInfo ()Z
+	public static fun valueOf (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static fun values ()[Lio/github/sunjirapath/slipverify/ReasonCode;
+}
+
+public final class io/github/sunjirapath/slipverify/ReceiverRule {
+	public static final field MIN_SUFFIX I
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAccountSuffix ()Ljava/lang/String;
+	public final fun getNameContains ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/sunjirapath/slipverify/SlipProvider {
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun supports (Lio/github/sunjirapath/slipverify/SlipType;)Z
+	public abstract fun verify (Lio/github/sunjirapath/slipverify/ProviderQuery;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipRequest {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Lio/github/sunjirapath/slipverify/ReceiverRule;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Lio/github/sunjirapath/slipverify/ReceiverRule;Ljava/time/Duration;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Lio/github/sunjirapath/slipverify/ReceiverRule;Ljava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getExpectedAmount ()Ljava/math/BigDecimal;
+	public final fun getExpectedReceiver ()Lio/github/sunjirapath/slipverify/ReceiverRule;
+	public final fun getImageBase64 ()Ljava/lang/String;
+	public final fun getMaxAge ()Ljava/time/Duration;
+	public final fun getPayload ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipType : java/lang/Enum {
+	public static final field BOT_STANDARD Lio/github/sunjirapath/slipverify/SlipType;
+	public static final field TRUEMONEY Lio/github/sunjirapath/slipverify/SlipType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/SlipType;
+	public static fun values ()[Lio/github/sunjirapath/slipverify/SlipType;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipVerificationResult {
+	public fun <init> (Lio/github/sunjirapath/slipverify/VerificationStatus;Lio/github/sunjirapath/slipverify/SlipType;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lio/github/sunjirapath/slipverify/VerificationStatus;Lio/github/sunjirapath/slipverify/SlipType;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAmount ()Ljava/math/BigDecimal;
+	public final fun getDebugPayloads ()Ljava/util/List;
+	public final fun getMaskedReceiver ()Ljava/lang/String;
+	public final fun getMaskedSender ()Ljava/lang/String;
+	public final fun getProviderName ()Ljava/lang/String;
+	public final fun getReasons ()Ljava/util/List;
+	public final fun getSendingBank ()Ljava/lang/String;
+	public final fun getSlipType ()Lio/github/sunjirapath/slipverify/SlipType;
+	public final fun getStatus ()Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public final fun getTransRef ()Ljava/lang/String;
+	public final fun getTransferTime ()Ljava/time/Instant;
+	public final fun hasReason (Lio/github/sunjirapath/slipverify/ReasonCode;)Z
+	public final fun isValid ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipVerifier {
+	public static final field Companion Lio/github/sunjirapath/slipverify/SlipVerifier$Companion;
+	public synthetic fun <init> (Ljava/util/List;Lio/github/sunjirapath/slipverify/DuplicateStore;Lio/github/sunjirapath/slipverify/QrExtractor;Ljava/time/Duration;Ljava/time/Clock;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun verify (Lio/github/sunjirapath/slipverify/SlipRequest;)Lio/github/sunjirapath/slipverify/SlipVerificationResult;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipVerifier$Builder {
+	public final fun build ()Lio/github/sunjirapath/slipverify/SlipVerifier;
+	public final fun clock (Ljava/time/Clock;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun debug (Z)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun duplicateStore (Lio/github/sunjirapath/slipverify/DuplicateStore;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun duplicateTtl (Ljava/time/Duration;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun provider (Lio/github/sunjirapath/slipverify/SlipProvider;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun providers (Ljava/util/List;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+	public final fun qrExtractor (Lio/github/sunjirapath/slipverify/QrExtractor;)Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+}
+
+public final class io/github/sunjirapath/slipverify/SlipVerifier$Companion {
+	public final fun builder ()Lio/github/sunjirapath/slipverify/SlipVerifier$Builder;
+}
+
+public final class io/github/sunjirapath/slipverify/VerificationStatus : java/lang/Enum {
+	public static final field ERROR Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public static final field INVALID Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public static final field UNVERIFIED Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public static final field VALID Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/VerificationStatus;
+	public static fun values ()[Lio/github/sunjirapath/slipverify/VerificationStatus;
+}
+
+public final class io/github/sunjirapath/slipverify/VerifiedSlip {
+	public fun <init> (Ljava/math/BigDecimal;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAmount ()Ljava/math/BigDecimal;
+	public final fun getDuplicateAtProvider ()Z
+	public final fun getReceiverAccount ()Ljava/lang/String;
+	public final fun getReceiverName ()Ljava/lang/String;
+	public final fun getSenderAccount ()Ljava/lang/String;
+	public final fun getSenderName ()Ljava/lang/String;
+	public final fun getSendingBank ()Ljava/lang/String;
+	public final fun getTransRef ()Ljava/lang/String;
+	public final fun getTransferTime ()Ljava/time/Instant;
+	public fun toString ()Ljava/lang/String;
+}
+

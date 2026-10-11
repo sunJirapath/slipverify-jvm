@@ -1,0 +1,30 @@
+# Minimal overrides on top of detekt's defaults (buildUponDefaultConfig = true).
+# Each one is a judgement call for a byte-twiddling parser library; everything else stays at the default.
+complexity:
+  LongParameterList:
+    # Result and value types carry many independent fields by design; they are plain data holders.
+    constructorThreshold: 12
+  LongMethod:
+    # Test tables are long lists of cases, not logic.
+    excludes: ['**/test/**']
+  TooManyFunctions:
+    # Tlv is the single internal home of the TLV/CRC primitives.
+    thresholdInObjects: 20
+style:
+  ReturnCount:
+    # Guard clauses ("return null if the payload is not X") are the idiom of every parser here.
+    max: 6
+    excludeGuardClauses: true
+  MagicNumber:
+    # Wire-format constants (tag ids, lengths, byte masks) are clearer inline than behind names.
+    excludes: ['**/test/**', '**/Tlv.kt']
+    ignoreNumbers: ['-1', '0', '1', '2', '3', '4', '8', '10', '16']
+    ignoreNamedArgument: true
+    ignoreExtensionFunctions: true
+  MaxLineLength:
+    maxLineLength: 120
+    # KDoc prose may run long; code lines may not. Test vectors (long payload strings) are exempt.
+    excludeCommentStatements: true
+    excludes: ['**/test/**']
+  UnusedPrivateMember:
+    active: true

@@ -1,0 +1,10 @@
+slipverify-jvm
+Copyright 2026 sunJirapath
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Runtime dependencies keep their own licenses:
+  - promptparse-jvm (Apache-2.0) - https://github.com/sunJirapath/promptparse-jvm
+  - ZXing (Apache-2.0), only in the image-zxing module - https://github.com/zxing/zxing
+
+Not affiliated with any bank or slip-verification provider.
