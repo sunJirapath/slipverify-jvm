@@ -11,13 +11,17 @@ complexity:
     # Tlv is the single internal home of the TLV/CRC primitives.
     thresholdInObjects: 20
 style:
+  ThrowsCount:
+    # Input validators reject with a reason code at each guard.
+    max: 6
+    excludeGuardClauses: true
   ReturnCount:
     # Guard clauses ("return null if the payload is not X") are the idiom of every parser here.
     max: 6
     excludeGuardClauses: true
   MagicNumber:
     # Wire-format constants (tag ids, lengths, byte masks) are clearer inline than behind names.
-    excludes: ['**/test/**', '**/Tlv.kt']
+    excludes: ['**/test/**', '**/Tlv.kt', '**/QrScanner.kt', '**/ImageInput.kt']
     ignoreNumbers: ['-1', '0', '1', '2', '3', '4', '8', '10', '16']
     ignoreNamedArgument: true
     ignoreExtensionFunctions: true
