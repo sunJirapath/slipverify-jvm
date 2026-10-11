@@ -18,4 +18,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "slipverify-jvm"
 
-include(":core", ":image-zxing", ":provider-common", ":provider-easyslip", ":provider-slipok", ":store-redis")
+include(
+    ":core",
+    ":image-zxing",
+    ":provider-common",
+    ":provider-easyslip",
+    ":provider-slipok",
+    ":store-redis",
+    ":spring-boot-starter",
+)

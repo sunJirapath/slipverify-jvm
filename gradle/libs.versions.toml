@@ -16,6 +16,8 @@ zxing = "3.5.4"
 gson = "2.14.0"
 wiremock = "3.13.2"
 lettuce = "6.8.2.RELEASE"
+springBoot = "3.5.16"
+micrometer = "1.17.1"
 
 [libraries]
 promptparse = { module = "io.github.sunjirapath:promptparse", version.ref = "promptparse" }
@@ -24,6 +26,11 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
 lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+micrometer-core = { module = "io.micrometer:micrometer-core" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

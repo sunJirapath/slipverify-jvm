@@ -36,7 +36,15 @@ apiValidation {
 
 // Library modules share one configuration (the equivalent of a convention plugin).
 val libraryModules =
-    listOf("core", "image-zxing", "provider-common", "provider-easyslip", "provider-slipok", "store-redis")
+    listOf(
+        "core",
+        "image-zxing",
+        "provider-common",
+        "provider-easyslip",
+        "provider-slipok",
+        "store-redis",
+        "spring-boot-starter",
+    )
 val testJdk = providers.gradleProperty("testJdk").orNull?.toInt()
 
 configure(subprojects.filter { it.name in libraryModules }) {
@@ -53,13 +61,16 @@ configure(subprojects.filter { it.name in libraryModules }) {
         jvmToolchain(17)
         explicitApi()
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
+            jvmTarget = if (project.name == "spring-boot-starter") JvmTarget.JVM_17 else JvmTarget.JVM_11
             allWarningsAsErrors = true
             // Fail at compile time on APIs newer than JDK 11, even though the build runs on a newer JDK.
-            freeCompilerArgs.add("-Xjdk-release=11")
+            freeCompilerArgs.add(if (project.name == "spring-boot-starter") "-Xjdk-release=17" else "-Xjdk-release=11")
         }
     }
-    tasks.withType<JavaCompile>().configureEach { options.release = 11 }
+    tasks.withType<JavaCompile>().configureEach {
+        options.release =
+            if (project.name == "spring-boot-starter") 17 else 11
+    }
 
     dependencies {
         "testImplementation"(platform(rootProject.libs.junit.bom))

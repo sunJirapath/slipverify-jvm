@@ -1,0 +1,185 @@
+public final class io/github/sunjirapath/slipverify/spring/MicrometerSlipMetrics : io/github/sunjirapath/slipverify/spring/SlipMetrics {
+	public fun <init> (Lio/micrometer/core/instrument/MeterRegistry;)V
+	public fun providerCall (Ljava/lang/String;Ljava/lang/String;J)V
+	public fun verification (Lio/github/sunjirapath/slipverify/SlipVerificationResult;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/RequestSizeLimitFilter : org/springframework/web/filter/OncePerRequestFilter {
+	public fun <init> (J)V
+}
+
+public abstract interface class io/github/sunjirapath/slipverify/spring/SlipMetrics {
+	public static final field Companion Lio/github/sunjirapath/slipverify/spring/SlipMetrics$Companion;
+	public static final field NOOP Lio/github/sunjirapath/slipverify/spring/SlipMetrics;
+	public abstract fun providerCall (Ljava/lang/String;Ljava/lang/String;J)V
+	public abstract fun verification (Lio/github/sunjirapath/slipverify/SlipVerificationResult;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipMetrics$Companion {
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerificationService {
+	public fun <init> (Lio/github/sunjirapath/slipverify/SlipVerifier;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)V
+	public final fun verify (Lio/github/sunjirapath/slipverify/SlipRequest;)Lio/github/sunjirapath/slipverify/SlipVerificationResult;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfiguration {
+	public static final field REDIS_STORE Ljava/lang/String;
+	public fun <init> ()V
+	public final fun slipDuplicateStore (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/DuplicateStore;
+	public final fun slipMetrics ()Lio/github/sunjirapath/slipverify/spring/SlipMetrics;
+	public final fun slipQrExtractor (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/QrExtractor;
+	public final fun slipVerificationService (Lio/github/sunjirapath/slipverify/SlipVerifier;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)Lio/github/sunjirapath/slipverify/spring/SlipVerificationService;
+	public final fun slipVerifier (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/QrExtractor;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)Lio/github/sunjirapath/slipverify/SlipVerifier;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfiguration$EasySlipConfiguration {
+	public fun <init> ()V
+	public final fun easySlipProvider (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/SlipProvider;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfiguration$MicrometerConfiguration {
+	public fun <init> ()V
+	public final fun micrometerSlipMetrics (Lio/micrometer/core/instrument/MeterRegistry;)Lio/github/sunjirapath/slipverify/spring/SlipMetrics;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfiguration$SlipOkConfiguration {
+	public fun <init> ()V
+	public final fun slipOkProvider (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/SlipProvider;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyController {
+	public fun <init> (Lio/github/sunjirapath/slipverify/spring/SlipVerificationService;)V
+	public final fun badRequest (Ljava/lang/Exception;)Lorg/springframework/http/ResponseEntity;
+	public final fun serverError (Ljava/lang/Exception;)Lorg/springframework/http/ResponseEntity;
+	public final fun verify (Lio/github/sunjirapath/slipverify/spring/VerifyRequestBody;)Lio/github/sunjirapath/slipverify/spring/VerifyResponseBody;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties {
+	public fun <init> ()V
+	public final fun getDebug ()Z
+	public final fun getDuplicate ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Duplicate;
+	public final fun getEasyslip ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$EasySlip;
+	public final fun getEnabled ()Z
+	public final fun getImage ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Image;
+	public final fun getProviderOrder ()Ljava/util/List;
+	public final fun getSlipok ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$SlipOk;
+	public final fun getWeb ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Web;
+	public final fun setDebug (Z)V
+	public final fun setEnabled (Z)V
+	public final fun setProviderOrder (Ljava/util/List;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Duplicate {
+	public static final field DEFAULT_TTL_DAYS J
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun getRedisUri ()Ljava/lang/String;
+	public final fun getStore ()Ljava/lang/String;
+	public final fun getTtl ()Ljava/time/Duration;
+	public final fun setEnabled (Z)V
+	public final fun setRedisUri (Ljava/lang/String;)V
+	public final fun setStore (Ljava/lang/String;)V
+	public final fun setTtl (Ljava/time/Duration;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$EasySlip {
+	public static final field DEFAULT_CONNECT_SECONDS J
+	public static final field DEFAULT_REQUEST_SECONDS J
+	public fun <init> ()V
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getCheckDuplicate ()Z
+	public final fun getConnectTimeout ()Ljava/time/Duration;
+	public final fun getRequestTimeout ()Ljava/time/Duration;
+	public final fun setApiKey (Ljava/lang/String;)V
+	public final fun setBaseUrl (Ljava/lang/String;)V
+	public final fun setCheckDuplicate (Z)V
+	public final fun setConnectTimeout (Ljava/time/Duration;)V
+	public final fun setRequestTimeout (Ljava/time/Duration;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Image {
+	public static final field DEFAULT_TIMEOUT_SECONDS J
+	public fun <init> ()V
+	public final fun getDecodeTimeout ()Ljava/time/Duration;
+	public final fun getMaxDimension ()I
+	public final fun getMaxEncodedBytes ()I
+	public final fun getMaxPixels ()J
+	public final fun setDecodeTimeout (Ljava/time/Duration;)V
+	public final fun setMaxDimension (I)V
+	public final fun setMaxEncodedBytes (I)V
+	public final fun setMaxPixels (J)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$SlipOk {
+	public static final field DEFAULT_CONNECT_SECONDS J
+	public static final field DEFAULT_REQUEST_SECONDS J
+	public fun <init> ()V
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getBranchId ()Ljava/lang/String;
+	public final fun getConnectTimeout ()Ljava/time/Duration;
+	public final fun getLog ()Z
+	public final fun getRequestTimeout ()Ljava/time/Duration;
+	public final fun setApiKey (Ljava/lang/String;)V
+	public final fun setBaseUrl (Ljava/lang/String;)V
+	public final fun setBranchId (Ljava/lang/String;)V
+	public final fun setConnectTimeout (Ljava/time/Duration;)V
+	public final fun setLog (Z)V
+	public final fun setRequestTimeout (Ljava/time/Duration;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Web {
+	public static final field DEFAULT_MAX_REQUEST_BYTES J
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun getMaxRequestBytes ()J
+	public final fun getPath ()Ljava/lang/String;
+	public final fun setEnabled (Z)V
+	public final fun setMaxRequestBytes (J)V
+	public final fun setPath (Ljava/lang/String;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyWebAutoConfiguration {
+	public fun <init> ()V
+	public final fun slipVerifyController (Lio/github/sunjirapath/slipverify/spring/SlipVerificationService;)Lio/github/sunjirapath/slipverify/spring/SlipVerifyController;
+	public final fun slipVerifySizeLimit (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lorg/springframework/boot/web/servlet/FilterRegistrationBean;
+}
+
+public final class io/github/sunjirapath/slipverify/spring/VerifyRequestBody {
+	public fun <init> ()V
+	public final fun getExpectedAmount ()Ljava/math/BigDecimal;
+	public final fun getImage ()Ljava/lang/String;
+	public final fun getMaxAgeSeconds ()Ljava/lang/Long;
+	public final fun getPayload ()Ljava/lang/String;
+	public final fun getReceiver ()Lio/github/sunjirapath/slipverify/spring/VerifyRequestBody$Receiver;
+	public final fun setExpectedAmount (Ljava/math/BigDecimal;)V
+	public final fun setImage (Ljava/lang/String;)V
+	public final fun setMaxAgeSeconds (Ljava/lang/Long;)V
+	public final fun setPayload (Ljava/lang/String;)V
+	public final fun setReceiver (Lio/github/sunjirapath/slipverify/spring/VerifyRequestBody$Receiver;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/VerifyRequestBody$Receiver {
+	public fun <init> ()V
+	public final fun getAccountSuffix ()Ljava/lang/String;
+	public final fun getNameContains ()Ljava/lang/String;
+	public final fun setAccountSuffix (Ljava/lang/String;)V
+	public final fun setNameContains (Ljava/lang/String;)V
+}
+
+public final class io/github/sunjirapath/slipverify/spring/VerifyResponseBody {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/time/Instant;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getAmount ()Ljava/math/BigDecimal;
+	public final fun getProvider ()Ljava/lang/String;
+	public final fun getReasons ()Ljava/util/List;
+	public final fun getReceiver ()Ljava/lang/String;
+	public final fun getSender ()Ljava/lang/String;
+	public final fun getSendingBank ()Ljava/lang/String;
+	public final fun getSlipType ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/String;
+	public final fun getTransRef ()Ljava/lang/String;
+	public final fun getTransferTime ()Ljava/time/Instant;
+}
+
