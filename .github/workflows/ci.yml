@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Let Gradle pick up the JDKs that setup-java installs instead of downloading them again.
+  GRADLE_JDK_ENV: JAVA_HOME_11_X64,JAVA_HOME_17_X64,JAVA_HOME_21_X64,JAVA_HOME_25_X64
+
+jobs:
+  check:
+    name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        jdk: [11, 17, 21, 25]
+        include:
+          # Line endings and paths can break parsing tests on Windows.
+          - os: windows-latest
+            jdk: 21
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Gradle itself runs on 21 (the last version listed becomes JAVA_HOME). The compile toolchain is 17
+      # and the tests run on the matrix JDK, so all three must be installed.
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            ${{ matrix.jdk }}
+            17
+            21
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          validate-wrappers: true
+
+      # format check, detekt, tests (on the matrix JDK), apiCheck, koverVerify and the Java example
+      - name: Gradle check
+        run: ./gradlew check koverXmlReport --no-daemon --console=plain -PtestJdk=${{ matrix.jdk }} -Porg.gradle.java.installations.fromEnv=$GRADLE_JDK_ENV
+
+      - name: Upload Kover XML reports
+        if: ${{ always() && matrix.jdk == 21 && matrix.os == 'ubuntu-latest' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kover-xml
+          path: "*/build/reports/kover/report.xml"
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports-jdk${{ matrix.jdk }}-${{ matrix.os }}
+          path: |
+            */build/reports/tests
+            */build/test-results
+            */build/reports/detekt
+            */build/reports/kover
+          if-no-files-found: ignore
+
+  redis-live:
+    name: Redis duplicate store against a real Redis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Run the live Redis test
+        env:
+          REDIS_URL: redis://localhost:6379
+        run: ./gradlew :store-redis:test -PincludeLive --no-daemon --console=plain -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
+
+  coverage-badge:
+    name: Publish coverage badge
+    needs: check
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # only this job may push, and only to the badges branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Build shields endpoint JSON from the Kover report
+        run: |
+          ./gradlew koverXmlReport --no-daemon --console=plain -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
+          python3 - <<'PY'
+          import json, re
+          import glob
+          missed = covered = 0
+          for path in glob.glob("*/build/reports/kover/report.xml"):
+              xml = open(path, encoding="utf-8").read()
+              m = list(re.finditer(r'<counter type="LINE" missed="(\d+)" covered="(\d+)"/>', xml))[-1]
+              missed += int(m.group(1))
+              covered += int(m.group(2))
+          pct = 100.0 * covered / (missed + covered)
+          color = "brightgreen" if pct >= 90 else "yellow" if pct >= 75 else "red"
+          json.dump({"schemaVersion": 1, "label": "coverage", "message": f"{pct:.1f}%", "color": color},
+                    open("coverage.json", "w"))
+          PY
+
+      - name: Push to the badges branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp coverage.json "$RUNNER_TEMP/coverage.json"
+          if git ls-remote --exit-code --heads origin badges >/dev/null 2>&1; then
+            git fetch --depth=1 origin badges
+            git checkout -f badges
+          else
+            git checkout --orphan badges
+            git rm -rf --quiet .
+          fi
+          cp "$RUNNER_TEMP/coverage.json" coverage.json
+          git add coverage.json
+          if git diff --cached --quiet; then
+            echo "badge unchanged"
+          else
+            git commit -m "chore: update coverage badge"
+            git push origin badges
+          fi

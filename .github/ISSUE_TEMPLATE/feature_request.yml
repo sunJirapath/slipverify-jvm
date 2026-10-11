@@ -1,0 +1,27 @@
+name: Feature request
+description: Support another field, format or behavior
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+      description: Example input and output help most.
+  - type: textarea
+    id: source
+    attributes:
+      label: Source of the format
+      description: A public specification or a reference implementation (no proprietary or bank-internal material).
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I only use public information, and I am fine with this being added under Apache-2.0.
+          required: true

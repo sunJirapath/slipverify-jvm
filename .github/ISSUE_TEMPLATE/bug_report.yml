@@ -1,0 +1,50 @@
+name: Bug report
+description: A payload is parsed or generated wrongly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problem? Do not file it here, see SECURITY.md.
+        Remove real account numbers, phone numbers and names from payloads before pasting them.
+  - type: input
+    id: version
+    attributes:
+      label: Library version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: payload
+    attributes:
+      label: QR payload or input
+      description: The exact string (anonymised), or the arguments you passed to the generator.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: call
+    attributes:
+      label: Code
+      description: The call you made, in Kotlin or Java.
+      render: kotlin
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: The result, or the exception with its message.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: JDK and OS
+      placeholder: "Temurin 21, Ubuntu 24.04"
