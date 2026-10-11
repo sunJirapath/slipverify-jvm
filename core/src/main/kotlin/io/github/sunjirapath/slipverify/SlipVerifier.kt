@@ -196,7 +196,9 @@ public class SlipVerifier private constructor(
             // Fresh slip the bank cannot see yet: neither real nor fake.
             ReasonCode.PROVIDER_PENDING -> VerificationStatus.UNVERIFIED
 
-            ReasonCode.PROVIDER_NOT_FOUND -> VerificationStatus.INVALID
+            ReasonCode.PROVIDER_NOT_FOUND, ReasonCode.DUPLICATE,
+            ReasonCode.AMOUNT_MISMATCH, ReasonCode.RECEIVER_MISMATCH,
+            -> VerificationStatus.INVALID
 
             // Our credentials, quota or rate limit, not the slip's fault.
             else -> VerificationStatus.ERROR
@@ -221,12 +223,28 @@ public class SlipVerifier private constructor(
         request.maxAge?.let { failures += ageFailure(it, verified) }
         if (verified.duplicateAtProvider) failures += ReasonCode.DUPLICATE
         // Only a slip that would otherwise be VALID is recorded, so a wrong-amount attempt cannot burn the slip.
+        var storeDown = false
         if (failures.isEmpty() && duplicateStore != null) {
-            val fresh = duplicateStore.markIfAbsent(DuplicateKeys.of(draft.slip), duplicateTtl)
-            if (!fresh) failures += ReasonCode.DUPLICATE
+            try {
+                if (!duplicateStore.markIfAbsent(DuplicateKeys.of(draft.slip), duplicateTtl)) {
+                    failures +=
+                        ReasonCode.DUPLICATE
+                }
+            } catch (
+                @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
+            ) {
+                // Fail closed: without the store we cannot rule out a replay, so the slip is not accepted.
+                storeDown = true
+                failures += ReasonCode.DUPLICATE_STORE_ERROR
+            }
         }
         reasons += failures
-        val status = if (failures.isEmpty()) VerificationStatus.VALID else VerificationStatus.INVALID
+        val status =
+            when {
+                storeDown -> VerificationStatus.ERROR
+                failures.isEmpty() -> VerificationStatus.VALID
+                else -> VerificationStatus.INVALID
+            }
         return draft.build(status, reasons, providerName, verified)
     }
 

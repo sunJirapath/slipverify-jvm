@@ -80,6 +80,7 @@ public final class io/github/sunjirapath/slipverify/ReasonCode : java/lang/Enum 
 	public static final field CRC_AUTOFIXED Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field CRC_INVALID Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field DUPLICATE Lio/github/sunjirapath/slipverify/ReasonCode;
+	public static final field DUPLICATE_STORE_ERROR Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field EMPTY_INPUT Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field IMAGE_DECODE_TIMEOUT Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field IMAGE_DIMENSIONS_TOO_LARGE Lio/github/sunjirapath/slipverify/ReasonCode;

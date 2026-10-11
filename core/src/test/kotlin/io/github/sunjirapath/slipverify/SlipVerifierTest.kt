@@ -358,6 +358,14 @@ class SlipVerifierTest {
     }
 
     @Test
+    fun `a failing duplicate store fails closed`() {
+        val store = DuplicateStore { _, _ -> error("redis down") }
+        val r = verifier(ok(), store = store).verify(SlipRequest(payload = Slips.standard()))
+        assertEquals(VerificationStatus.ERROR, r.status)
+        assertEquals(listOf(ReasonCode.DUPLICATE_STORE_ERROR), r.reasons)
+    }
+
+    @Test
     fun `in memory store expires entries`() {
         var t = Instant.parse("2026-01-01T00:00:00Z")
         val clock =

@@ -1,0 +1,13 @@
+public final class io/github/sunjirapath/slipverify/redis/RedisDuplicateStore : io/github/sunjirapath/slipverify/DuplicateStore, java/io/Closeable {
+	public static final field Companion Lio/github/sunjirapath/slipverify/redis/RedisDuplicateStore$Companion;
+	public fun <init> (Lio/lettuce/core/api/sync/RedisStringCommands;)V
+	public synthetic fun <init> (Lio/lettuce/core/api/sync/RedisStringCommands;Ljava/lang/Runnable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public static final fun connect (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/redis/RedisDuplicateStore;
+	public fun markIfAbsent (Ljava/lang/String;Ljava/time/Duration;)Z
+}
+
+public final class io/github/sunjirapath/slipverify/redis/RedisDuplicateStore$Companion {
+	public final fun connect (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/redis/RedisDuplicateStore;
+}
+

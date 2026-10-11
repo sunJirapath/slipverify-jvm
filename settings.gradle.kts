@@ -18,4 +18,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "slipverify-jvm"
 
-include(":core", ":image-zxing", ":provider-common", ":provider-easyslip")
+include(":core", ":image-zxing", ":provider-common", ":provider-easyslip", ":provider-slipok", ":store-redis")

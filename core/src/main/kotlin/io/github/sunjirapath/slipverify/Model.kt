@@ -60,4 +60,7 @@ public enum class ReasonCode(
     TOO_OLD,
     TIME_UNAVAILABLE,
     DUPLICATE,
+
+    /** The duplicate store failed, so uniqueness could not be proven. The slip is not accepted. */
+    DUPLICATE_STORE_ERROR,
 }

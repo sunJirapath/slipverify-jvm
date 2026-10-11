@@ -15,6 +15,7 @@ promptparse = "0.1.0"
 zxing = "3.5.4"
 gson = "2.14.0"
 wiremock = "3.13.2"
+lettuce = "6.8.2.RELEASE"
 
 [libraries]
 promptparse = { module = "io.github.sunjirapath:promptparse", version.ref = "promptparse" }
@@ -22,6 +23,7 @@ zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
