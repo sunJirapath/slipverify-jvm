@@ -10,6 +10,8 @@ complexity:
   TooManyFunctions:
     # Tlv is the single internal home of the TLV/CRC primitives.
     thresholdInObjects: 20
+    # Providers and the verifier keep their request/parse/map steps as small private functions.
+    thresholdInClasses: 16
 style:
   ThrowsCount:
     # Input validators reject with a reason code at each guard.

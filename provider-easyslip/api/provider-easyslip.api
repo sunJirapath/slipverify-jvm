@@ -1,0 +1,33 @@
+public final class io/github/sunjirapath/slipverify/easyslip/EasySlipConfig {
+	public static final field Companion Lio/github/sunjirapath/slipverify/easyslip/EasySlipConfig$Companion;
+	public static final field DEFAULT_BASE_URL Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/time/Duration;Ljava/time/Duration;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getCheckDuplicate ()Z
+	public final fun getConnectTimeout ()Ljava/time/Duration;
+	public final fun getRequestTimeout ()Ljava/time/Duration;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/easyslip/EasySlipConfig$Companion {
+}
+
+public final class io/github/sunjirapath/slipverify/easyslip/EasySlipProvider : io/github/sunjirapath/slipverify/SlipProvider {
+	public static final field HTTP_FORBIDDEN I
+	public static final field HTTP_OK I
+	public static final field HTTP_TOO_MANY I
+	public static final field HTTP_UNAUTHORIZED I
+	public fun <init> (Lio/github/sunjirapath/slipverify/easyslip/EasySlipConfig;)V
+	public fun <init> (Lio/github/sunjirapath/slipverify/easyslip/EasySlipConfig;Lio/github/sunjirapath/slipverify/provider/ProviderHttp;)V
+	public synthetic fun <init> (Lio/github/sunjirapath/slipverify/easyslip/EasySlipConfig;Lio/github/sunjirapath/slipverify/provider/ProviderHttp;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getName ()Ljava/lang/String;
+	public fun supports (Lio/github/sunjirapath/slipverify/SlipType;)Z
+	public fun toString ()Ljava/lang/String;
+	public fun verify (Lio/github/sunjirapath/slipverify/ProviderQuery;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+}
+

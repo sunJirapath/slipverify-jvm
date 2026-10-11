@@ -35,7 +35,7 @@ apiValidation {
 }
 
 // Library modules share one configuration (the equivalent of a convention plugin).
-val libraryModules = listOf("core", "image-zxing")
+val libraryModules = listOf("core", "image-zxing", "provider-common", "provider-easyslip")
 val testJdk = providers.gradleProperty("testJdk").orNull?.toInt()
 
 configure(subprojects.filter { it.name in libraryModules }) {
