@@ -16,7 +16,7 @@ zxing = "3.5.4"
 gson = "2.14.0"
 wiremock = "3.13.2"
 lettuce = "6.8.2.RELEASE"
-springBoot = "3.5.16"
+springBoot = "4.1.1"
 micrometer = "1.17.1"
 
 [libraries]
