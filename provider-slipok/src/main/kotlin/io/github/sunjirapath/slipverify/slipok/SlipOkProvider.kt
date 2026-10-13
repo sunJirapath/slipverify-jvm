@@ -1,6 +1,7 @@
 package io.github.sunjirapath.slipverify.slipok
 
 import com.google.gson.JsonObject
+import io.github.sunjirapath.slipverify.Charge
 import io.github.sunjirapath.slipverify.ProviderOutcome
 import io.github.sunjirapath.slipverify.ProviderQuery
 import io.github.sunjirapath.slipverify.ReasonCode
@@ -95,14 +96,17 @@ public class SlipOkProvider
         }
 
         private fun interpret(result: HttpResult): ProviderOutcome {
-            result.transportFailure?.let { return ProviderOutcome.unavailable(it) }
+            // A request that never reached SlipOK cost nothing; a timeout after sending may have been billed.
+            result.transportFailure?.let {
+                return ProviderOutcome.unavailable(it, if (result.notSent) Charge.NO else Charge.UNKNOWN)
+            }
             val json = Json.parseObject(result.body)
             val code = Json.string(json, "code")
             return when {
                 // SlipOK reports failures in the body (`code`, `message`); HTTP statuses per code are undocumented.
                 code != null -> mapCode(code, json)
 
-                result.isServerError -> ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR)
+                result.isServerError -> ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR, Charge.UNKNOWN)
 
                 result.status == HTTP_OK -> parseSuccess(json)
 
@@ -113,7 +117,9 @@ public class SlipOkProvider
         private fun parseSuccess(json: JsonObject?): ProviderOutcome {
             if (Json.bool(json, "success") != true) return ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR)
             val slip = slip(Json.obj(json, "data"), duplicate = false)
-            return slip?.let { ProviderOutcome.verified(it) } ?: ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR)
+            // A confirmed slip counts against the package (repeats too, unless `log` is on).
+            return slip?.let { ProviderOutcome.verified(it, Charge.YES) }
+                ?: ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR, Charge.UNKNOWN)
         }
 
         private fun slip(
@@ -159,47 +165,57 @@ public class SlipOkProvider
                 ?.let { "${it.take(YEAR_END)}-${it.substring(YEAR_END, MONTH_END)}-${it.substring(MONTH_END)}" }
                 ?: raw
 
-        /** Error table from <https://slipok.com/api-documentation/error-status-code/>. */
+        /**
+         * Error table from <https://slipok.com/api-documentation/error-status-code/>. [Charge] follows the
+         * "Quota Calculation" section of the SlipOK guide v1.13: only a valid slip is counted, and 1009 is
+         * stated to be free; image, QR, auth and package errors never reach the slip lookup.
+         */
         private fun mapCode(
             code: String,
             json: JsonObject?,
         ): ProviderOutcome =
             when (code) {
                 "1001", "1002" -> {
-                    ProviderOutcome.rejected(ReasonCode.PROVIDER_AUTH_ERROR)
+                    ProviderOutcome.rejected(ReasonCode.PROVIDER_AUTH_ERROR, Charge.NO)
                 }
 
                 "1003", "1004" -> {
-                    ProviderOutcome.rejected(ReasonCode.PROVIDER_QUOTA_EXCEEDED)
+                    ProviderOutcome.rejected(ReasonCode.PROVIDER_QUOTA_EXCEEDED, Charge.NO)
                 }
 
                 "1007", "1008", "1011" -> {
-                    ProviderOutcome.notFound()
+                    ProviderOutcome.notFound(Charge.NO)
                 }
 
                 "1009" -> {
-                    ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR)
+                    ProviderOutcome.unavailable(ReasonCode.PROVIDER_ERROR, Charge.NO)
                 }
 
                 "1010" -> {
-                    ProviderOutcome.rejected(ReasonCode.PROVIDER_PENDING)
+                    ProviderOutcome.rejected(ReasonCode.PROVIDER_PENDING, Charge.NO)
                 }
 
                 // The slip is real and was seen before; its data (when SlipOK includes it) rides along.
+                // Repeats are only reported when `log` is on, and the guide says they are not billed.
                 "1012" -> {
-                    slip(Json.obj(json, "data"), duplicate = true)?.let { ProviderOutcome.verified(it) }
-                        ?: ProviderOutcome.rejected(ReasonCode.DUPLICATE)
+                    slip(Json.obj(json, "data"), duplicate = true)?.let { ProviderOutcome.verified(it, Charge.NO) }
+                        ?: ProviderOutcome.rejected(ReasonCode.DUPLICATE, Charge.NO)
                 }
 
+                // 1013/1014 are answers about a valid slip (the guide counts a receiver mismatch as used).
                 "1013" -> {
-                    ProviderOutcome.rejected(ReasonCode.AMOUNT_MISMATCH)
+                    ProviderOutcome.rejected(ReasonCode.AMOUNT_MISMATCH, Charge.YES)
                 }
 
                 "1014" -> {
-                    ProviderOutcome.rejected(ReasonCode.RECEIVER_MISMATCH)
+                    ProviderOutcome.rejected(ReasonCode.RECEIVER_MISMATCH, Charge.YES)
                 }
 
-                // 1000 (no data), 1005/1006 (image problems) and anything unknown.
+                // 1000 (no data), 1005/1006 (image problems): rejected before any lookup. Unknown codes stay UNKNOWN.
+                "1000", "1005", "1006" -> {
+                    ProviderOutcome.rejected(ReasonCode.PROVIDER_ERROR, Charge.NO)
+                }
+
                 else -> {
                     ProviderOutcome.rejected(ReasonCode.PROVIDER_ERROR)
                 }
@@ -207,8 +223,8 @@ public class SlipOkProvider
 
         private fun byStatus(status: Int): ProviderOutcome =
             when (status) {
-                HTTP_UNAUTHORIZED, HTTP_FORBIDDEN -> ProviderOutcome.rejected(ReasonCode.PROVIDER_AUTH_ERROR)
-                HTTP_TOO_MANY -> ProviderOutcome.rejected(ReasonCode.PROVIDER_RATE_LIMITED)
+                HTTP_UNAUTHORIZED, HTTP_FORBIDDEN -> ProviderOutcome.rejected(ReasonCode.PROVIDER_AUTH_ERROR, Charge.NO)
+                HTTP_TOO_MANY -> ProviderOutcome.rejected(ReasonCode.PROVIDER_RATE_LIMITED, Charge.NO)
                 else -> ProviderOutcome.rejected(ReasonCode.PROVIDER_ERROR)
             }
 

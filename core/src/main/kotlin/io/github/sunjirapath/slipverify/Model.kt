@@ -54,6 +54,9 @@ public enum class ReasonCode(
     PROVIDER_ERROR,
     PROVIDER_UNSUPPORTED_SLIP_TYPE,
 
+    /** The caller's own [QuotaGuard] refused the call, so the provider was not asked (no money spent). */
+    QUOTA_CAPPED,
+
     // Business checks
     AMOUNT_MISMATCH,
     RECEIVER_MISMATCH,

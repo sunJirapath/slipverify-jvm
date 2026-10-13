@@ -1,6 +1,7 @@
 public final class io/github/sunjirapath/slipverify/provider/HttpResult {
-	public synthetic fun <init> (ILjava/lang/String;Lio/github/sunjirapath/slipverify/ReasonCode;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ILjava/lang/String;Lio/github/sunjirapath/slipverify/ReasonCode;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getBody ()Ljava/lang/String;
+	public final fun getNotSent ()Z
 	public final fun getStatus ()I
 	public final fun getTransportFailure ()Lio/github/sunjirapath/slipverify/ReasonCode;
 	public final fun isServerError ()Z

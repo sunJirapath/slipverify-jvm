@@ -73,6 +73,21 @@ public class VerifiedSlip
                 "receiver=${Masking.party(receiverName, receiverAccount)})"
     }
 
+/**
+ * Whether a provider call used up paid quota. Providers set this so that a caller who caps its spending (see
+ * [QuotaGuard]) can give a reservation back when the answer cost nothing.
+ */
+public enum class Charge {
+    /** The call was billed or counted against the quota (for example a confirmed slip). */
+    YES,
+
+    /** The provider documents that this answer is free (for example "QR not found", or a bank outage). */
+    NO,
+
+    /** Not documented, or the answer may have been lost (timeout). Callers should assume it was charged. */
+    UNKNOWN,
+}
+
 /** Kind of answer a provider gave. */
 public enum class ProviderOutcomeKind {
     VERIFIED,
@@ -91,31 +106,42 @@ public class ProviderOutcome private constructor(
     public val kind: ProviderOutcomeKind,
     public val slip: VerifiedSlip?,
     public val reason: ReasonCode?,
+    /** Whether this call used quota; [Charge.UNKNOWN] unless the provider says otherwise. */
+    public val charge: Charge = Charge.UNKNOWN,
 ) {
-    override fun toString(): String = "ProviderOutcome($kind, reason=$reason)"
+    override fun toString(): String = "ProviderOutcome($kind, reason=$reason, charge=$charge)"
 
     public companion object {
         @JvmStatic
-        public fun verified(slip: VerifiedSlip): ProviderOutcome =
-            ProviderOutcome(ProviderOutcomeKind.VERIFIED, slip, null)
-
-        @JvmStatic
-        public fun notFound(): ProviderOutcome =
-            ProviderOutcome(ProviderOutcomeKind.NOT_FOUND, null, ReasonCode.PROVIDER_NOT_FOUND)
-
-        /** [reason] is one of the `PROVIDER_*` codes, e.g. `PROVIDER_AUTH_ERROR`, `PROVIDER_PENDING`. */
-        @JvmStatic
-        public fun rejected(reason: ReasonCode): ProviderOutcome =
-            ProviderOutcome(ProviderOutcomeKind.REJECTED, null, reason)
+        @JvmOverloads
+        public fun verified(
+            slip: VerifiedSlip,
+            charge: Charge = Charge.UNKNOWN,
+        ): ProviderOutcome = ProviderOutcome(ProviderOutcomeKind.VERIFIED, slip, null, charge)
 
         @JvmStatic
         @JvmOverloads
-        public fun unavailable(reason: ReasonCode = ReasonCode.PROVIDER_ERROR): ProviderOutcome =
-            ProviderOutcome(ProviderOutcomeKind.UNAVAILABLE, null, reason)
+        public fun notFound(charge: Charge = Charge.UNKNOWN): ProviderOutcome =
+            ProviderOutcome(ProviderOutcomeKind.NOT_FOUND, null, ReasonCode.PROVIDER_NOT_FOUND, charge)
+
+        /** [reason] is one of the `PROVIDER_*` codes, e.g. `PROVIDER_AUTH_ERROR`, `PROVIDER_PENDING`. */
+        @JvmStatic
+        @JvmOverloads
+        public fun rejected(
+            reason: ReasonCode,
+            charge: Charge = Charge.UNKNOWN,
+        ): ProviderOutcome = ProviderOutcome(ProviderOutcomeKind.REJECTED, null, reason, charge)
+
+        @JvmStatic
+        @JvmOverloads
+        public fun unavailable(
+            reason: ReasonCode = ReasonCode.PROVIDER_ERROR,
+            charge: Charge = Charge.UNKNOWN,
+        ): ProviderOutcome = ProviderOutcome(ProviderOutcomeKind.UNAVAILABLE, null, reason, charge)
 
         @JvmStatic
         public fun unsupported(): ProviderOutcome =
-            ProviderOutcome(ProviderOutcomeKind.UNSUPPORTED, null, ReasonCode.PROVIDER_UNSUPPORTED_SLIP_TYPE)
+            ProviderOutcome(ProviderOutcomeKind.UNSUPPORTED, null, ReasonCode.PROVIDER_UNSUPPORTED_SLIP_TYPE, Charge.NO)
     }
 }
 
@@ -130,6 +156,36 @@ public interface SlipProvider {
     public fun supports(type: SlipType): Boolean
 
     public fun verify(query: ProviderQuery): ProviderOutcome
+}
+
+/**
+ * Lets the caller answer "have we already used this slip?" from its own records **before** any provider is asked, so
+ * a re-scanned slip costs nothing. Slips are identified by what the offline parse yields (the same triple that
+ * [DuplicateStore] hashes). Must be thread-safe. If it throws, the slip is refused ([ReasonCode.DUPLICATE_STORE_ERROR]).
+ */
+public fun interface KnownSlips {
+    public fun isKnown(
+        type: SlipType,
+        sendingBank: String,
+        transRef: String,
+    ): Boolean
+}
+
+/**
+ * Caps how many paid provider calls are made. The verifier calls [tryReserve] right before asking a provider and
+ * [settle] with what that provider reported ([ProviderOutcome.charge]). Implementations decide what to do on
+ * [Charge.NO] (give the unit back) and on [Charge.YES]/[Charge.UNKNOWN] (keep it). Must be thread-safe; a
+ * [tryReserve] that throws counts as "cap reached", because failing open would spend money.
+ */
+public interface QuotaGuard {
+    /** True when one more call is allowed (and now reserved); false means the provider must not be asked. */
+    public fun tryReserve(provider: String): Boolean
+
+    /** Called exactly once for every successful [tryReserve], even when the provider failed or threw. */
+    public fun settle(
+        provider: String,
+        charge: Charge,
+    )
 }
 
 /** Remembers verified slips so one transfer cannot be credited twice. Must be thread-safe. */

@@ -30,7 +30,7 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfigu
 	public final fun slipMetrics ()Lio/github/sunjirapath/slipverify/spring/SlipMetrics;
 	public final fun slipQrExtractor (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/QrExtractor;
 	public final fun slipVerificationService (Lio/github/sunjirapath/slipverify/SlipVerifier;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)Lio/github/sunjirapath/slipverify/spring/SlipVerificationService;
-	public final fun slipVerifier (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/QrExtractor;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)Lio/github/sunjirapath/slipverify/SlipVerifier;
+	public final fun slipVerifier (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/QrExtractor;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;Lorg/springframework/beans/factory/ObjectProvider;Lorg/springframework/beans/factory/ObjectProvider;)Lio/github/sunjirapath/slipverify/SlipVerifier;
 }
 
 public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfiguration$EasySlipConfiguration {

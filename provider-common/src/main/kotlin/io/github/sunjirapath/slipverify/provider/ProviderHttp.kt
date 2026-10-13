@@ -2,7 +2,9 @@ package io.github.sunjirapath.slipverify.provider
 
 import io.github.sunjirapath.slipverify.ReasonCode
 import java.io.IOException
+import java.net.ConnectException
 import java.net.http.HttpClient
+import java.net.http.HttpConnectTimeoutException
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpTimeoutException
@@ -16,6 +18,8 @@ public class HttpResult private constructor(
     public val status: Int,
     public val body: String,
     public val transportFailure: ReasonCode?,
+    /** True when the request provably never reached the server (connection refused or connect timeout). */
+    public val notSent: Boolean = false,
 ) {
     public val isServerError: Boolean get() = status >= SERVER_ERROR_FROM
 
@@ -29,7 +33,10 @@ public class HttpResult private constructor(
             body: String,
         ) = HttpResult(status, body, null)
 
-        fun failure(reason: ReasonCode) = HttpResult(0, "", reason)
+        fun failure(
+            reason: ReasonCode,
+            notSent: Boolean = false,
+        ) = HttpResult(0, "", reason, notSent)
     }
 }
 
@@ -52,9 +59,17 @@ public class ProviderHttp
                     HttpResult.response(response.statusCode(), body)
                 }
             } catch (
+                @Suppress("SwallowedException") e: HttpConnectTimeoutException,
+            ) {
+                HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT, notSent = true)
+            } catch (
                 @Suppress("SwallowedException") e: HttpTimeoutException,
             ) {
                 HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT)
+            } catch (
+                @Suppress("SwallowedException") e: ConnectException,
+            ) {
+                HttpResult.failure(ReasonCode.PROVIDER_ERROR, notSent = true)
             } catch (
                 @Suppress("SwallowedException") e: IOException,
             ) {

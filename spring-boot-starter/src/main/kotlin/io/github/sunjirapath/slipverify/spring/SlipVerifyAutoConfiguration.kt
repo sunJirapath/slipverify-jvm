@@ -2,7 +2,9 @@ package io.github.sunjirapath.slipverify.spring
 
 import io.github.sunjirapath.slipverify.DuplicateStore
 import io.github.sunjirapath.slipverify.InMemoryDuplicateStore
+import io.github.sunjirapath.slipverify.KnownSlips
 import io.github.sunjirapath.slipverify.QrExtractor
+import io.github.sunjirapath.slipverify.QuotaGuard
 import io.github.sunjirapath.slipverify.SlipProvider
 import io.github.sunjirapath.slipverify.SlipRequest
 import io.github.sunjirapath.slipverify.SlipVerificationResult
@@ -76,12 +78,15 @@ public class SlipVerifyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @Suppress("LongParameterList") // Spring injects each optional collaborator by type; there is no useful grouping.
     public fun slipVerifier(
         props: SlipVerifyProperties,
         providers: ObjectProvider<SlipProvider>,
         extractor: QrExtractor,
         store: ObjectProvider<DuplicateStore>,
         metrics: SlipMetrics,
+        knownSlips: ObjectProvider<KnownSlips>,
+        quotaGuard: ObjectProvider<QuotaGuard>,
     ): SlipVerifier {
         val order = props.providerOrder.map { it.lowercase() }
         val chain =
@@ -95,6 +100,8 @@ public class SlipVerifyAutoConfiguration {
             .providers(chain)
             .qrExtractor(extractor)
             .duplicateStore(store.ifAvailable)
+            .knownSlips(knownSlips.ifAvailable)
+            .quotaGuard(quotaGuard.ifAvailable)
             .duplicateTtl(props.duplicate.ttl)
             .debug(props.debug)
             .build()

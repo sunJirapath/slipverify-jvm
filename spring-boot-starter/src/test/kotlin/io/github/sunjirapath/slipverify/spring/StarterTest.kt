@@ -141,6 +141,44 @@ class StarterTest {
     }
 
     @Test
+    fun `known-slips and quota-guard beans are wired into the verifier`() {
+        var calls = 0
+        val custom =
+            object : SlipProvider {
+                override val name = "custom"
+
+                override fun supports(type: SlipType) = true
+
+                override fun verify(query: io.github.sunjirapath.slipverify.ProviderQuery): ProviderOutcome {
+                    calls++
+                    return ProviderOutcome.notFound()
+                }
+            }
+        val known =
+            io.github.sunjirapath.slipverify
+                .KnownSlips { _, _, ref -> ref == "SPRING0001" }
+        val capped =
+            object : io.github.sunjirapath.slipverify.QuotaGuard {
+                override fun tryReserve(provider: String) = false
+
+                override fun settle(
+                    provider: String,
+                    charge: io.github.sunjirapath.slipverify.Charge,
+                ) = Unit
+            }
+        runner.withBean("custom", SlipProvider::class.java, { custom }).withBean("known", io.github.sunjirapath.slipverify.KnownSlips::class.java, { known }).run { ctx ->
+            val r = ctx.getBean(SlipVerifier::class.java).verify(SlipRequest(payload = payload))
+            assertTrue(ReasonCode.DUPLICATE in r.reasons)
+            assertEquals(0, calls)
+        }
+        runner.withBean("custom", SlipProvider::class.java, { custom }).withBean("guard", io.github.sunjirapath.slipverify.QuotaGuard::class.java, { capped }).run { ctx ->
+            val r = ctx.getBean(SlipVerifier::class.java).verify(SlipRequest(payload = payload))
+            assertTrue(ReasonCode.QUOTA_CAPPED in r.reasons)
+            assertEquals(0, calls)
+        }
+    }
+
+    @Test
     fun `user supplied provider joins the chain`() {
         val custom =
             object : SlipProvider {

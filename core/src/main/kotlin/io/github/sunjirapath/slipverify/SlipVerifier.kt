@@ -17,6 +17,8 @@ public class SlipVerifier private constructor(
     private val duplicateTtl: Duration,
     private val clock: Clock,
     private val debug: Boolean,
+    private val knownSlips: KnownSlips?,
+    private val quotaGuard: QuotaGuard?,
 ) {
     public fun verify(request: SlipRequest): SlipVerificationResult {
         val reasons = ArrayList<ReasonCode>()
@@ -24,6 +26,22 @@ public class SlipVerifier private constructor(
         val slip = input.slip
         if (slip.crcAutoFixed) reasons += ReasonCode.CRC_AUTOFIXED
         val base = Draft(slip, input.debugPayloads)
+        // The caller's own records come first: a slip it already used must not cost a provider call.
+        knownSlips?.let { known ->
+            val seen =
+                try {
+                    known.isKnown(slip.type, slip.sendingBank, slip.transRef)
+                } catch (
+                    @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
+                ) {
+                    reasons += ReasonCode.DUPLICATE_STORE_ERROR
+                    return base.build(VerificationStatus.ERROR, reasons)
+                }
+            if (seen) {
+                reasons += ReasonCode.DUPLICATE
+                return base.build(VerificationStatus.INVALID, reasons)
+            }
+        }
         if (providers.isEmpty()) {
             reasons += ReasonCode.NO_PROVIDER_CONFIGURED
             return base.build(VerificationStatus.UNVERIFIED, reasons)
@@ -152,13 +170,11 @@ public class SlipVerifier private constructor(
         reasons: MutableList<ReasonCode>,
     ): Pair<ProviderOutcome?, String?> {
         val query = ProviderQuery(slip.type, input.payload, input.image, request.expectedAmount)
-        var supported = false
+        val candidates = providers.filter { it.supports(slip.type) }
         var refused = false
         var last: ProviderOutcome? = null
-        for (provider in providers) {
-            if (!provider.supports(slip.type)) continue
-            supported = true
-            val outcome = safeVerify(provider, query)
+        for (provider in candidates) {
+            val outcome = ask(provider, query, reasons) ?: continue
             when (outcome.kind) {
                 ProviderOutcomeKind.VERIFIED, ProviderOutcomeKind.NOT_FOUND, ProviderOutcomeKind.REJECTED -> {
                     return outcome to provider.name
@@ -174,8 +190,51 @@ public class SlipVerifier private constructor(
                 }
             }
         }
-        if (!supported || (refused && last == null)) reasons += ReasonCode.PROVIDER_UNSUPPORTED_SLIP_TYPE
+        if (candidates.isEmpty() || (refused && last == null)) reasons += ReasonCode.PROVIDER_UNSUPPORTED_SLIP_TYPE
         return last to null
+    }
+
+    /** One provider call under the optional quota guard; `null` when the guard refused it (the provider is not asked). */
+    private fun ask(
+        provider: SlipProvider,
+        query: ProviderQuery,
+        reasons: MutableList<ReasonCode>,
+    ): ProviderOutcome? {
+        val guard = quotaGuard
+        if (guard != null && !reserve(guard, provider)) {
+            if (ReasonCode.QUOTA_CAPPED !in reasons) reasons += ReasonCode.QUOTA_CAPPED
+            return null
+        }
+        val outcome = safeVerify(provider, query)
+        guard?.let { settle(it, provider, outcome) }
+        return outcome
+    }
+
+    private fun reserve(
+        guard: QuotaGuard,
+        provider: SlipProvider,
+    ): Boolean =
+        try {
+            guard.tryReserve(provider.name)
+        } catch (
+            @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
+        ) {
+            // Fail closed: if the cap cannot be consulted, spending money is the worse mistake.
+            false
+        }
+
+    private fun settle(
+        guard: QuotaGuard,
+        provider: SlipProvider,
+        outcome: ProviderOutcome,
+    ) {
+        try {
+            guard.settle(provider.name, outcome.charge)
+        } catch (
+            @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
+        ) {
+            // The reservation stays, which over-counts at worst. A broken guard must not change the result.
+        }
     }
 
     private fun safeVerify(
@@ -256,7 +315,7 @@ public class SlipVerifier private constructor(
         return if (Duration.between(time, clock.instant()) > maxAge) listOf(ReasonCode.TOO_OLD) else emptyList()
     }
 
-    private fun ReasonCode.isProviderFailure() = name.startsWith("PROVIDER_")
+    private fun ReasonCode.isProviderFailure() = name.startsWith("PROVIDER_") || this == ReasonCode.QUOTA_CAPPED
 
     /** Fluent configuration. Not thread-safe; build once and share the verifier. */
     public class Builder internal constructor() {
@@ -266,6 +325,8 @@ public class SlipVerifier private constructor(
         private var duplicateTtl: Duration = DEFAULT_DUPLICATE_TTL
         private var clock: Clock = Clock.systemUTC()
         private var debug: Boolean = false
+        private var knownSlips: KnownSlips? = null
+        private var quotaGuard: QuotaGuard? = null
 
         /** Adds a provider. Providers are tried in the order added; later ones are fallbacks. */
         public fun provider(provider: SlipProvider): Builder = apply { providers += provider }
@@ -289,8 +350,23 @@ public class SlipVerifier private constructor(
         /** Include every decoded QR text in results. Off by default: payloads identify people. */
         public fun debug(enabled: Boolean): Builder = apply { debug = enabled }
 
+        /** Checked after the offline parse and before any provider; a hit gives `INVALID` + `DUPLICATE` at no cost. */
+        public fun knownSlips(known: KnownSlips?): Builder = apply { knownSlips = known }
+
+        /** Caps paid provider calls; see [QuotaGuard]. A capped provider is skipped and the next one is tried. */
+        public fun quotaGuard(guard: QuotaGuard?): Builder = apply { quotaGuard = guard }
+
         public fun build(): SlipVerifier =
-            SlipVerifier(providers.toList(), duplicateStore, qrExtractor, duplicateTtl, clock, debug)
+            SlipVerifier(
+                providers.toList(),
+                duplicateStore,
+                qrExtractor,
+                duplicateTtl,
+                clock,
+                debug,
+                knownSlips,
+                quotaGuard,
+            )
     }
 
     public companion object {
