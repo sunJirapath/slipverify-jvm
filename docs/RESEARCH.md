@@ -93,7 +93,7 @@ slipverify-jvm/
   examples/java, examples/spring-boot
   gradle/libs.versions.toml, config/detekt, .github/workflows (ci, codeql, release)
 ```
-Artifacts: `io.github.sunjirapath:slipverify-core` etc. Starter named `slipverify-spring-boot-starter`.
+Artifacts: `io.github.sunjirapath.slipverify:slipverify-core` etc. Starter named `slipverify-spring-boot-starter`.
 
 ### Public API (Java-friendly; all `public` explicit, `@JvmStatic`/`@JvmOverloads`)
 ```kotlin
