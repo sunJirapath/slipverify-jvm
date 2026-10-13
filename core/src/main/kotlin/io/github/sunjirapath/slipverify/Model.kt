@@ -66,4 +66,13 @@ public enum class ReasonCode(
 
     /** The duplicate store failed, so uniqueness could not be proven. The slip is not accepted. */
     DUPLICATE_STORE_ERROR,
+
+    /** Image worker capacity is exhausted; the caller may retry later. */
+    IMAGE_PROCESSING_BUSY,
+
+    /** The provider confirmed a different transfer than the submitted QR. */
+    TRANSACTION_MISMATCH,
+
+    /** Transfer time exceeds the two-minute future clock-skew allowance. */
+    TIME_IN_FUTURE,
 }

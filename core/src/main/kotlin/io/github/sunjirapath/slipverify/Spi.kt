@@ -5,6 +5,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 
 /** Turns a base64 image into slip QR candidates. Implemented by the `image-zxing` module. */
@@ -63,6 +64,7 @@ public class VerifiedSlip
         public val senderAccount: String? = null,
         public val receiverName: String? = null,
         public val receiverAccount: String? = null,
+        /** Required for acceptance; must match the reference parsed from the submitted QR. */
         public val transRef: String? = null,
         public val sendingBank: String? = null,
         /** True when the provider itself reported the slip was already used. */
@@ -188,7 +190,10 @@ public interface QuotaGuard {
     )
 }
 
-/** Remembers verified slips so one transfer cannot be credited twice. Must be thread-safe. */
+/**
+ * Short-lived replay protection. Must be thread-safe. This mark is not atomic with the caller's payment transaction:
+ * keep a unique transfer identity in the payment database too (see docs/PAYMENT_ACCEPTANCE.md).
+ */
 public fun interface DuplicateStore {
     /**
      * Atomically records [key] for [ttl].
@@ -208,6 +213,7 @@ public class InMemoryDuplicateStore
         private val clock: Clock = Clock.systemUTC(),
     ) : DuplicateStore {
         private val entries = ConcurrentHashMap<String, Instant>()
+        private val nextPurge = AtomicReference(Instant.MIN)
 
         override fun markIfAbsent(
             key: String,
@@ -223,11 +229,17 @@ public class InMemoryDuplicateStore
                     expiry
                 }
             }
-            if (entries.size > PURGE_THRESHOLD) entries.values.removeIf { !it.isAfter(now) }
+            val next = nextPurge.get()
+            if (entries.size > PURGE_THRESHOLD && !now.isBefore(next) &&
+                nextPurge.compareAndSet(next, now.plus(PURGE_INTERVAL))
+            ) {
+                entries.values.removeIf { !it.isAfter(now) }
+            }
             return added
         }
 
         private companion object {
             const val PURGE_THRESHOLD = 10_000
+            val PURGE_INTERVAL: Duration = Duration.ofMinutes(1)
         }
     }

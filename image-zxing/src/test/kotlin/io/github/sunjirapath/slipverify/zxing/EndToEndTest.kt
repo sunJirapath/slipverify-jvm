@@ -41,6 +41,8 @@ class EndToEndTest {
                     "xxx-x-x5678-x",
                     "Test Receiver",
                     "xxx-x-x1234-x",
+                    transRef = SlipVerify.parse(query.payload)?.transRef ?: SlipVerify.parseTrueMoney(query.payload)?.transactionId,
+                    sendingBank = SlipVerify.parse(query.payload)?.sendingBank,
                 ),
             )
         }

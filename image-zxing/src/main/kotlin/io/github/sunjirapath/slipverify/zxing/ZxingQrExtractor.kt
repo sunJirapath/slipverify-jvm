@@ -3,9 +3,10 @@ package io.github.sunjirapath.slipverify.zxing
 import io.github.sunjirapath.slipverify.ExtractionResult
 import io.github.sunjirapath.slipverify.QrExtractor
 import io.github.sunjirapath.slipverify.ReasonCode
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.function.Predicate
@@ -31,6 +32,10 @@ public class ZxingQrExtractor
                 val decoded = ImageInput.decodeBase64(imageBase64, limits)
                 ImageInput.requireSupportedFormat(decoded)
                 scanWithTimeout(decoded, isSlip)
+            } catch (
+                @Suppress("SwallowedException") e: RejectedExecutionException,
+            ) {
+                ExtractionResult(emptyList(), null, ReasonCode.IMAGE_PROCESSING_BUSY, null)
             } catch (e: InputRejected) {
                 ExtractionResult(emptyList(), null, e.reason, null)
             }
@@ -42,7 +47,7 @@ public class ZxingQrExtractor
             val future =
                 POOL.submit<ExtractionResult> {
                     val image = ImageInput.decode(bytes, limits)
-                    val scanner = QrScanner(isSlip)
+                    val scanner = QrScanner(isSlip, limits)
                     scanner.scan(image)
                     val failure = if (scanner.found.isEmpty()) ReasonCode.NO_QR_FOUND else null
                     ExtractionResult(scanner.found.toList(), scanner.slip, failure, bytes.copyOf())
@@ -66,13 +71,23 @@ public class ZxingQrExtractor
                 future.cancel(true)
                 Thread.currentThread().interrupt()
                 ExtractionResult(emptyList(), null, ReasonCode.IMAGE_DECODE_TIMEOUT, null)
+            } finally {
+                if (future.isCancelled) POOL.remove(future as Runnable)
             }
         }
 
-        private companion object {
-            val POOL: ExecutorService =
-                Executors.newCachedThreadPool { runnable ->
-                    Thread(runnable, "slipverify-zxing").apply { isDaemon = true }
-                }
+        internal companion object {
+            private const val WORKERS = 4
+            private const val QUEUE_CAPACITY = 8
+            internal val POOL: ThreadPoolExecutor =
+                ThreadPoolExecutor(
+                    WORKERS,
+                    WORKERS,
+                    0L,
+                    TimeUnit.MILLISECONDS,
+                    ArrayBlockingQueue(QUEUE_CAPACITY),
+                    { runnable -> Thread(runnable, "slipverify-zxing").apply { isDaemon = true } },
+                    ThreadPoolExecutor.AbortPolicy(),
+                )
         }
     }

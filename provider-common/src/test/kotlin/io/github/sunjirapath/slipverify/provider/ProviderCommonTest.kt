@@ -104,12 +104,18 @@ class ProviderCommonTest {
 
     @Test
     fun `send refuses absurdly large bodies`() {
-        withServer({ ex ->
-            val big = ByteArray(2_100_000) { 'a'.code.toByte() }
-            ex.sendResponseHeaders(200, big.size.toLong())
-            ex.responseBody.use { it.write(big) }
-        }) { url ->
-            assertEquals(ReasonCode.PROVIDER_ERROR, get(url).transportFailure)
+        for (chunked in listOf(false, true)) {
+            withServer({ ex ->
+                val big = ByteArray(2_100_000) { 'a'.code.toByte() }
+                ex.sendResponseHeaders(200, if (chunked) 0 else big.size.toLong())
+                try {
+                    ex.responseBody.use { it.write(big) }
+                } catch (_: java.io.IOException) {
+                    // The client intentionally cancels the download before the server finishes sending.
+                }
+            }) { url ->
+                assertEquals(ReasonCode.PROVIDER_ERROR, get(url).transportFailure)
+            }
         }
     }
 

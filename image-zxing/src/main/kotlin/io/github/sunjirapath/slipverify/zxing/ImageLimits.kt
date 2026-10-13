@@ -6,8 +6,8 @@ import java.time.Duration
  * Safety limits applied before and during image decoding.
  *
  * @property maxEncodedBytes longest accepted base64 text (default 5 MB), checked before any decoding.
- * @property maxDimension longest accepted width or height in pixels, read from the header only.
- * @property maxPixels largest accepted width x height, read from the header only (decompression-bomb guard).
+ * @property maxDimension longest accepted width or height in pixels, including generated variants.
+ * @property maxPixels largest accepted width x height, checked before decoding and allocating variants.
  * @property decodeTimeout wall-clock budget for decoding the image and searching it for QR codes.
  */
 public class ImageLimits

@@ -189,7 +189,7 @@ class StarterTest {
                 override fun verify(query: io.github.sunjirapath.slipverify.ProviderQuery) =
                     ProviderOutcome.verified(
                         io.github.sunjirapath.slipverify
-                            .VerifiedSlip(java.math.BigDecimal.TEN),
+                            .VerifiedSlip(java.math.BigDecimal.TEN, transRef = "SPRING0001"),
                     )
             }
         runner.withBean("custom", SlipProvider::class.java, { custom }).withPropertyValues("slipverify.duplicate.enabled=false").run { ctx ->

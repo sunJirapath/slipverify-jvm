@@ -22,7 +22,7 @@ public class SlipVerifier private constructor(
 ) {
     public fun verify(request: SlipRequest): SlipVerificationResult {
         val reasons = ArrayList<ReasonCode>()
-        val input = resolveInput(request, reasons) ?: return failed(VerificationStatus.INVALID, reasons)
+        val input = resolveInput(request, reasons) ?: return failed(failureStatus(reasons.first()), reasons)
         val slip = input.slip
         if (slip.crcAutoFixed) reasons += ReasonCode.CRC_AUTOFIXED
         val base = Draft(slip, input.debugPayloads)
@@ -270,6 +270,12 @@ public class SlipVerifier private constructor(
         request: SlipRequest,
         reasons: MutableList<ReasonCode>,
     ): SlipVerificationResult {
+        identityFailure(draft.slip, verified)?.let { reason ->
+            reasons += reason
+            return draft.build(failureStatus(reason), reasons, providerName)
+        }
+        val identity =
+            ParsedSlip(draft.slip.type, draft.slip.sendingBank, verified.transRef!!, false)
         val failures = ArrayList<ReasonCode>()
         request.expectedAmount?.let {
             if (it.compareTo(verified.amount) != 0) failures += ReasonCode.AMOUNT_MISMATCH
@@ -279,13 +285,13 @@ public class SlipVerifier private constructor(
                 failures += ReasonCode.RECEIVER_MISMATCH
             }
         }
-        request.maxAge?.let { failures += ageFailure(it, verified) }
+        failures += timeFailures(request.maxAge, verified)
         if (verified.duplicateAtProvider) failures += ReasonCode.DUPLICATE
         // Only a slip that would otherwise be VALID is recorded, so a wrong-amount attempt cannot burn the slip.
         var storeDown = false
         if (failures.isEmpty() && duplicateStore != null) {
             try {
-                if (!duplicateStore.markIfAbsent(DuplicateKeys.of(draft.slip), duplicateTtl)) {
+                if (!duplicateStore.markIfAbsent(DuplicateKeys.of(identity), duplicateTtl)) {
                     failures +=
                         ReasonCode.DUPLICATE
                 }
@@ -307,12 +313,35 @@ public class SlipVerifier private constructor(
         return draft.build(status, reasons, providerName, verified)
     }
 
-    private fun ageFailure(
-        maxAge: Duration,
+    private fun identityFailure(
+        parsed: ParsedSlip,
+        verified: VerifiedSlip,
+    ): ReasonCode? {
+        if (verified.transRef.isNullOrBlank()) return ReasonCode.PROVIDER_ERROR
+        return if (verified.transRef != parsed.transRef ||
+            (verified.sendingBank != null && verified.sendingBank != parsed.sendingBank)
+        ) {
+            ReasonCode.TRANSACTION_MISMATCH
+        } else {
+            null
+        }
+    }
+
+    private fun failureStatus(reason: ReasonCode): VerificationStatus =
+        when (reason) {
+            ReasonCode.IMAGE_PROCESSING_BUSY, ReasonCode.PROVIDER_ERROR -> VerificationStatus.ERROR
+            else -> VerificationStatus.INVALID
+        }
+
+    private fun timeFailures(
+        maxAge: Duration?,
         verified: VerifiedSlip,
     ): List<ReasonCode> {
-        val time = verified.transferTime ?: return listOf(ReasonCode.TIME_UNAVAILABLE)
-        return if (Duration.between(time, clock.instant()) > maxAge) listOf(ReasonCode.TOO_OLD) else emptyList()
+        val time =
+            verified.transferTime ?: return if (maxAge != null) listOf(ReasonCode.TIME_UNAVAILABLE) else emptyList()
+        val now = clock.instant()
+        if (time.isAfter(now.plus(FUTURE_CLOCK_SKEW))) return listOf(ReasonCode.TIME_IN_FUTURE)
+        return if (maxAge != null && Duration.between(time, now) > maxAge) listOf(ReasonCode.TOO_OLD) else emptyList()
     }
 
     private fun ReasonCode.isProviderFailure() = name.startsWith("PROVIDER_") || this == ReasonCode.QUOTA_CAPPED
@@ -371,6 +400,7 @@ public class SlipVerifier private constructor(
 
     public companion object {
         private val DEFAULT_DUPLICATE_TTL: Duration = Duration.ofDays(30)
+        private val FUTURE_CLOCK_SKEW: Duration = Duration.ofMinutes(2)
 
         @JvmStatic
         public fun builder(): Builder = Builder()
