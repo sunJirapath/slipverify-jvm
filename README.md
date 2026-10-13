@@ -142,6 +142,36 @@ SlipVerifier verifier = SlipVerifier.builder()
 (for example a timeout) keep it. A guard that throws is treated as "cap reached" because failing open would spend money.
 Make `tryReserve` atomic (one conditional `UPDATE`, or `INCR` with a limit) so concurrent requests cannot overshoot.
 
+### Provider URL, request limits and billing round
+
+Each account has its own endpoint and its own billing round, so both are settings, not code:
+
+```yaml
+slipverify:
+  bill-zone: Asia/Bangkok              # billing days are calendar days in this zone (default)
+  slipok:
+    api-key: ${SLIPOK_API_KEY:}
+    url: https://api.slipok.com/api/line/apikey/<YOUR_BRANCH_ID>   # branch id included; replaces base-url + branch-id
+    bill-cutoff: 13/11/2026            # next billing date (or just 13): the quota resets on the 13th of every month
+    limit:
+      max-per-cycle: 500               # provider calls per billing round; needs bill-cutoff
+      max-per-minute: 30
+  easyslip:
+    api-key: ${EASYSLIP_API_KEY:}
+    bill-cutoff: 1                     # each provider can bill on its own day
+    limit:
+      max-per-cycle: 1000
+```
+
+- `bill-cutoff` takes a day of the month (`13`) or the next billing date (`13/11/2026`, `2026-11-13`), which means "resets
+  every 13th" at 00:00 in `bill-zone`. A cutoff past the end of a short month (31 in April) falls on the last day. Use
+  the Gregorian year, not the Buddhist-era year.
+- Once a provider reaches a limit it is not asked; the verifier moves to the next provider in `provider-order`, or
+  reports `QUOTA_CAPPED` when none is left (the provider is not asked, so no money is spent). Answers the provider documents as free give the unit back.
+- Counts are kept per JVM. With several instances give each its share, or define your own `QuotaGuard` bean (it takes
+  priority). A per-cycle limit without `bill-cutoff`, or an unreadable cutoff, fails startup.
+- Plain Java: `new ConfiguredQuotaGuard(Map.of("slipok", new ProviderLimit(500L, 30L)), Map.of("slipok", BillingCycle.parse("13")))`.
+
 ### Frontend snippet (JavaScript)
 
 HEIC (iPhone) is not supported: converting through a canvas yields JPEG and also shrinks big photos.
@@ -261,6 +291,28 @@ if (r.getStatus() == VerificationStatus.VALID) { /* ยืนยันออเ�
 ดูตัวอย่างที่รันได้ใน [examples/java](examples/java) และโค้ดเต็มในหัวข้อ English ด้านบน
 สตาร์เตอร์รองรับ Spring Boot 4 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 3 ให้ประกอบ core กับ provider เอง
 การบันทึกว่าชำระเงินแล้วต้องทำพร้อมบันทึกรหัสธุรกรรมที่ไม่ซ้ำใน transaction เดียวกัน ดู [แนวทางรับชำระเงิน](docs/PAYMENT_ACCEPTANCE.md)
+
+### URL ผู้ให้บริการ จำกัดจำนวนเรียก และรอบบิล
+
+แต่ละบัญชีมี URL และรอบบิลของตัวเอง จึงตั้งค่าได้ใน config:
+
+```yaml
+slipverify:
+  bill-zone: Asia/Bangkok              # วันตัดรอบบิลนับตามเขตเวลานี้ (ค่าเริ่มต้น)
+  slipok:
+    api-key: ${SLIPOK_API_KEY:}
+    url: https://api.slipok.com/api/line/apikey/<YOUR_BRANCH_ID>   # ใส่ branch id ใน URL ได้เลย
+    bill-cutoff: 13/11/2026            # วันที่ตัดรอบบิลหน้า (หรือใส่แค่ 13) = โควตารีเซ็ตทุกวันที่ 13
+    limit:
+      max-per-cycle: 500               # จำนวนครั้งที่เรียกต่อรอบบิล (ต้องตั้ง bill-cutoff)
+      max-per-minute: 30
+```
+
+- `bill-cutoff` ใส่วันที่ในเดือน (`13`) หรือวันที่ตัดรอบหน้า (`13/11/2026`, `2026-11-13`) แปลว่ารีเซ็ตทุกวันที่ 13 เวลา 00:00
+  ตาม `bill-zone` ถ้าวันตัดรอบเกินจำนวนวันของเดือน (เช่น 31 ในเดือนเมษายน) จะใช้วันสุดท้ายของเดือน และใช้ปี ค.ศ.
+- เมื่อผู้ให้บริการถึงลิมิตจะไม่ถูกเรียก ระบบสลับไปรายถัดไปใน `provider-order` หรือคืน `QUOTA_CAPPED` (ไม่เรียกผู้ให้บริการ จึงไม่เสียเงิน)
+- ตัวนับอยู่ในแต่ละ JVM หากรันหลายเครื่องให้แบ่งโควตา หรือประกาศ bean `QuotaGuard` เอง (มีลำดับก่อน)
+  ตั้ง `max-per-cycle` โดยไม่มี `bill-cutoff` หรือใส่วันที่ผิดรูปแบบ แอปจะไม่สตาร์ท
 
 ### โค้ดฝั่ง frontend
 
