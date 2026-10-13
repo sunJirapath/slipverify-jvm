@@ -16,7 +16,7 @@ zxing = "3.5.4"
 gson = "2.14.0"
 wiremock = "3.13.2"
 lettuce = "6.8.2.RELEASE"
-springBoot = "3.5.16"
+springBoot = "4.1.1"
 micrometer = "1.17.1"
 
 [libraries]
@@ -30,6 +30,7 @@ spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies"
 spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 micrometer-core = { module = "io.micrometer:micrometer-core" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }

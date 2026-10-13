@@ -89,7 +89,7 @@ slipverify-jvm/
   image-zxing/           ZXing core + javase
   provider-easyslip/  provider-slipok/  provider-rdcw/
   store-redis/           Lettuce (see Q4)
-  spring-boot-starter/   Boot 3.x, Micrometer optional
+  spring-boot-starter/   Boot 4.x, Micrometer optional
   examples/java, examples/spring-boot
   gradle/libs.versions.toml, config/detekt, .github/workflows (ci, codeql, release)
 ```

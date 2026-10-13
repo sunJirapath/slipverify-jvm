@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking for the starter:** `slipverify-spring-boot-starter` now targets Spring Boot 4.1 (was 3.5). Spring Boot 3
+  applications should use `slipverify-core` and a provider module directly.
+
 ### Fixed
 
 - Reject nonpositive provider-confirmed amounts before duplicate marking.

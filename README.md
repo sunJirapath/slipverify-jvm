@@ -5,7 +5,7 @@
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FsunJirapath%2Fslipverify-jvm%2Fbadges%2Fcoverage.json)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunJirapath/slipverify-jvm)](LICENSE)
 [![Core Java 11+](https://img.shields.io/badge/Core-Java%2011%2B-blue)](#modules)
-[![Spring Boot 3 / Java 17+](https://img.shields.io/badge/Starter-Spring%20Boot%203%20%2F%20Java%2017%2B-green)](#quick-start-spring-boot)
+[![Spring Boot 4 / Java 17+](https://img.shields.io/badge/Starter-Spring%20Boot%204%20%2F%20Java%2017%2B-green)](#quick-start-spring-boot)
 
 Takes a slip image that your frontend sends as base64, finds the slip's mini QR, parses it with
 [promptparse-jvm](https://github.com/sunJirapath/promptparse-jvm), optionally confirms it with a slip-verification
@@ -28,8 +28,9 @@ The artifacts are not available on Maven Central yet. Build from source with `./
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
 
-The Spring Boot starter targets Spring Boot 3 / Java 17. On Spring Boot 4 or an app that wires its own beans, use
-`slipverify-core` plus a provider module directly: they are plain libraries with no Spring dependency.
+The Spring Boot starter targets Spring Boot 4 / Java 17 (built and tested against 4.1). On Spring Boot 3 or an app that
+wires its own beans, use `slipverify-core` plus a provider module directly: they are plain libraries with no Spring
+dependency.
 
 ### How it works
 
@@ -58,7 +59,7 @@ flowchart LR
 | `provider-easyslip` | `slipverify-provider-easyslip` | [EasySlip](https://document.easyslip.com/en/v2/) API v2 |
 | `provider-slipok` | `slipverify-provider-slipok` | [SlipOK](https://slipok.com/api-documentation/) |
 | `store-redis` | `slipverify-store-redis` | duplicate store on Redis (`SET NX PX`, Lettuce) |
-| `spring-boot-starter` | `slipverify-spring-boot-starter` | auto-config, properties, metrics, example controller (Boot 3, Java 17) |
+| `spring-boot-starter` | `slipverify-spring-boot-starter` | auto-config, properties, metrics, example controller (Boot 4, Java 17) |
 | `examples` | – | plain Java and Spring Boot demos |
 
 `core` depends only on promptparse-jvm. Libraries use Java 11 bytecode; the starter needs Java 17.
@@ -258,7 +259,7 @@ if (r.getStatus() == VerificationStatus.VALID) { /* ยืนยันออเ�
 ### เริ่มต้นใช้งานกับ Java ธรรมดา
 
 ดูตัวอย่างที่รันได้ใน [examples/java](examples/java) และโค้ดเต็มในหัวข้อ English ด้านบน
-รองรับ Spring Boot 3 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 4 ให้ประกอบ core กับ provider เอง
+สตาร์เตอร์รองรับ Spring Boot 4 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 3 ให้ประกอบ core กับ provider เอง
 การบันทึกว่าชำระเงินแล้วต้องทำพร้อมบันทึกรหัสธุรกรรมที่ไม่ซ้ำใน transaction เดียวกัน ดู [แนวทางรับชำระเงิน](docs/PAYMENT_ACCEPTANCE.md)
 
 ### โค้ดฝั่ง frontend
