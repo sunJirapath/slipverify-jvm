@@ -1,8 +1,11 @@
-# slipverify-jvm — verify Thai transfer slips from a base64 image (Kotlin/JVM)
+# slipverify-jvm — Thai transfer slip verification for Java and Kotlin
 
 [![CI](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/sunJirapath/slipverify-jvm)](LICENSE)
+[![CodeQL](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/codeql.yml/badge.svg)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/codeql.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FsunJirapath%2Fslipverify-jvm%2Fbadges%2Fcoverage.json)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/sunJirapath/slipverify-jvm)](LICENSE)
+[![Core Java 11+](https://img.shields.io/badge/Core-Java%2011%2B-blue)](#modules)
+[![Spring Boot 3 / Java 17+](https://img.shields.io/badge/Starter-Spring%20Boot%203%20%2F%20Java%2017%2B-green)](#quick-start-spring-boot)
 
 Takes a slip image that your frontend sends as base64, finds the slip's mini QR, parses it with
 [promptparse-jvm](https://github.com/sunJirapath/promptparse-jvm), optionally confirms it with a slip-verification
@@ -19,9 +22,9 @@ codes**. Java-friendly API, Spring Boot starter included. ตรวจสลิ�
 
 ### Status
 
-`0.1.0` (first release). Group `io.github.sunjirapath`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
+Current source version: `0.1.0`. Group `io.github.sunjirapath`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
 `slipverify-provider-easyslip`, `slipverify-image-zxing`, `slipverify-store-redis`, `slipverify-spring-boot-starter`.
-Until the Maven Central sync finishes you can build from source with `./gradlew publishToMavenLocal`.
+The artifacts are not available on Maven Central yet. Build from source with `./gradlew publishToMavenLocal`.
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
 
@@ -178,7 +181,7 @@ check to pass. Reasons are an enum list; `CRC_AUTOFIXED`, `NO_PROVIDER_CONFIGURE
 Fallback rules: timeout / network / 5xx → next provider; any 4xx (including 429), "not found" or "pending" → stop.
 Each slip type is only sent to providers that support it. Missing data fails closed (for example `maxAge` without a
 transfer time gives `TIME_UNAVAILABLE`). Provider confirmations must include a transaction reference matching the
-submitted QR; an absent reference gives `ERROR` + `PROVIDER_ERROR`, and a differing reference or sending bank gives
+submitted QR and a positive confirmed amount; an absent reference or nonpositive amount gives `ERROR` + `PROVIDER_ERROR`, and a differing reference or sending bank gives
 `INVALID` + `TRANSACTION_MISMATCH`. Future transfer times beyond two minutes of clock skew give `TIME_IN_FUTURE`,
 even when `maxAge` is omitted.
 
@@ -202,7 +205,9 @@ Sources and open questions: [docs/RESEARCH.md](docs/RESEARCH.md).
   Image scans share four worker threads and a queue of eight jobs per JVM; saturation returns
   `ERROR` + `IMAGE_PROCESSING_BUSY`. Cancellation is cooperative, so workers remain bounded even if decoding does
   not stop immediately. Provider responses are limited to 2,000,000 bytes during download.
-- The duplicate store fails closed: if Redis is down the slip is not accepted.
+- The duplicate store fails closed: if Redis is down the slip is not accepted. `slipverify.duplicate.store` accepts
+  only `memory` or `redis`; an unknown value fails startup instead of silently selecting memory.
+- Metrics are best effort: callback exceptions cannot discard a result or trigger another paid provider call.
 - The example controller has **no authentication or rate limiting**. It enforces a body size limit and returns generic
   errors; details are logged at DEBUG on the server only.
 - Receiver matching works on masked provider data, so it narrows but does not identify an account. Use the
@@ -210,14 +215,16 @@ Sources and open questions: [docs/RESEARCH.md](docs/RESEARCH.md).
 
 ### Build
 
-`./gradlew check` (format, detekt, tests, API check, 90% coverage). See [CONTRIBUTING.md](CONTRIBUTING.md).
+`./gradlew check` (format, detekt, tests, API check, 90% coverage). Gradle verifies downloaded dependencies against
+the committed SHA-256 metadata and pins the wrapper distribution checksum. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for reviewing checksum updates.
 Licensed under [Apache-2.0](LICENSE).
 
 ## ภาษาไทย
 
 ### สถานะ
 
-รุ่นแรก `0.1.0` ระหว่างรอซิงก์ Maven Central ใช้ `./gradlew publishToMavenLocal` เพื่อทดลอง
+เวอร์ชันซอร์สปัจจุบัน `0.1.0` ยังไม่อยู่บน Maven Central ใช้ `./gradlew publishToMavenLocal` เพื่อทดลอง
 รองรับผู้ให้บริการ EasySlip และ SlipOK ส่วน RDCW จะเพิ่มเมื่อมีเอกสารรูปแบบผลลัพธ์ที่สำเร็จ
 
 > **ข้อสงวนสิทธิ์:** โปรเจกต์นี้ไม่มีส่วนเกี่ยวข้องหรือได้รับการรับรองจากธนาคารหรือผู้ให้บริการตรวจสลิปรายใด

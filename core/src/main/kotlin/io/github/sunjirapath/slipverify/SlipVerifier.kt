@@ -270,7 +270,7 @@ public class SlipVerifier private constructor(
         request: SlipRequest,
         reasons: MutableList<ReasonCode>,
     ): SlipVerificationResult {
-        identityFailure(draft.slip, verified)?.let { reason ->
+        confirmationFailure(draft.slip, verified)?.let { reason ->
             reasons += reason
             return draft.build(failureStatus(reason), reasons, providerName)
         }
@@ -313,11 +313,11 @@ public class SlipVerifier private constructor(
         return draft.build(status, reasons, providerName, verified)
     }
 
-    private fun identityFailure(
+    private fun confirmationFailure(
         parsed: ParsedSlip,
         verified: VerifiedSlip,
     ): ReasonCode? {
-        if (verified.transRef.isNullOrBlank()) return ReasonCode.PROVIDER_ERROR
+        if (verified.transRef.isNullOrBlank() || verified.amount.signum() <= 0) return ReasonCode.PROVIDER_ERROR
         return if (verified.transRef != parsed.transRef ||
             (verified.sendingBank != null && verified.sendingBank != parsed.sendingBank)
         ) {

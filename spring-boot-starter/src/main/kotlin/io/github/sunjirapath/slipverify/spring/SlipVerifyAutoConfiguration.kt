@@ -60,11 +60,15 @@ public class SlipVerifyAutoConfiguration {
     @ConditionalOnProperty(prefix = "slipverify.duplicate", name = ["enabled"], matchIfMissing = true)
     public fun slipDuplicateStore(props: SlipVerifyProperties): DuplicateStore {
         val d = props.duplicate
-        return if (d.store.equals("redis", ignoreCase = true)) redisStore(d) else InMemoryDuplicateStore()
+        return when {
+            d.store.equals("redis", ignoreCase = true) -> redisStore(d)
+            d.store.equals("memory", ignoreCase = true) -> InMemoryDuplicateStore()
+            else -> error("slipverify.duplicate.store must be memory or redis")
+        }
     }
 
     private fun redisStore(d: SlipVerifyProperties.Duplicate): DuplicateStore {
-        check(ClassUtils.isPresent(REDIS_STORE, javaClass.classLoader)) {
+        check(ClassUtils.isPresent(REDIS_STORE, ClassUtils.getDefaultClassLoader())) {
             "slipverify.duplicate.store=redis needs the slipverify-store-redis module on the classpath"
         }
         val uri = d.redisUri
@@ -181,7 +185,7 @@ public class SlipVerificationService(
     private val metrics: SlipMetrics,
 ) {
     public fun verify(request: SlipRequest): SlipVerificationResult =
-        verifier.verify(request).also { metrics.verification(it) }
+        verifier.verify(request).also { result -> recordMetrics { metrics.verification(result) } }
 }
 
 /** A provider is enabled only by non-blank settings, so an unset `${ENV_VAR:}` placeholder means "off". */
