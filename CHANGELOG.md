@@ -36,6 +36,8 @@ First release.
     repeats (with `log`) and refused connections are `NO`; timeouts, 5xx and unknown codes are `UNKNOWN`.
   - `ProviderHttp`/`HttpResult.notSent` marks requests that provably never left (connection refused, connect timeout).
   - The Spring Boot starter picks up `KnownSlips` and `QuotaGuard` beans.
+  - `SlipOkProvider.quota()` reads the package quota (`remaining`, `overQuota`, `endDate`) so a cap can follow the
+    provider's own billing period; it never throws and returns `null` on any failure.
 - `examples`: plain Java and Spring Boot demos.
 - Build and CI: Gradle KTS + version catalog, explicit API, binary-compatibility validator, Kover (90% gate), detekt,
   Spotless, CI matrix on JDK 11/17/21/25, CodeQL, tag-triggered release workflow.

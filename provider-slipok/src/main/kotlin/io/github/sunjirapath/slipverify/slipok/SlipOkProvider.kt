@@ -16,6 +16,8 @@ import java.net.URI
 import java.net.http.HttpRequest
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 /**
  * Settings for [SlipOkProvider].
@@ -62,6 +64,23 @@ public class SlipOkConfig
     }
 
 /**
+ * What `GET .../{branchId}/quota` reports (SlipOK guide v1.13, "Check Slip Quota").
+ *
+ * @property remaining slips left in the current package.
+ * @property overQuota slips used beyond the package (billed).
+ * @property specialRemaining remaining special quota.
+ * @property endDate when the current package ends; the quota resets with the next package period. `null` if absent.
+ */
+public class SlipOkQuota(
+    public val remaining: Int,
+    public val overQuota: Int,
+    public val specialRemaining: Int,
+    public val endDate: LocalDate?,
+) {
+    override fun toString(): String = "SlipOkQuota(remaining=$remaining, overQuota=$overQuota, endDate=$endDate)"
+}
+
+/**
  * [SlipProvider] for SlipOK (<https://slipok.com/api-documentation/check-slip/>), verifying by QR payload (`data`).
  * Only standard bank slips: SlipOK's docs do not mention TrueMoney, so those are left to other providers.
  */
@@ -94,6 +113,43 @@ public class SlipOkProvider
                     .build()
             return interpret(http.send(request))
         }
+
+        /**
+         * Reads the package quota. Free (the guide does not bill this call). Never throws: any failure, a malformed
+         * answer or a missing field gives `null`, so a caller must not treat `null` as "quota exhausted".
+         */
+        public fun quota(): SlipOkQuota? {
+            val request =
+                HttpRequest
+                    .newBuilder(URI.create(config.baseUrl.trimEnd('/') + "/" + config.branchId + "/quota"))
+                    .timeout(config.requestTimeout)
+                    .header("x-authorization", config.apiKey())
+                    .header("Accept", "application/json")
+                    .header("User-Agent", "slipverify-jvm")
+                    .GET()
+                    .build()
+            val result = http.send(request)
+            if (result.transportFailure != null || result.status != HTTP_OK) return null
+            val json = Json.parseObject(result.body)
+            if (Json.bool(json, "success") != true) return null
+            val data = Json.obj(json, "data")
+            val remaining = Json.decimal(data, "quota")?.toInt() ?: return null
+            return SlipOkQuota(
+                remaining = remaining,
+                overQuota = Json.decimal(data, "overQuota")?.toInt() ?: 0,
+                specialRemaining = Json.decimal(data, "specialQuota")?.toInt() ?: 0,
+                endDate = parseDate(Json.string(data, "endDate")),
+            )
+        }
+
+        private fun parseDate(raw: String?): LocalDate? =
+            try {
+                raw?.let { LocalDate.parse(it) }
+            } catch (
+                @Suppress("SwallowedException") e: DateTimeParseException,
+            ) {
+                null
+            }
 
         private fun interpret(result: HttpResult): ProviderOutcome {
             // A request that never reached SlipOK cost nothing; a timeout after sending may have been billed.

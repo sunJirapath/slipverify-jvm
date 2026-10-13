@@ -30,8 +30,18 @@ public final class io/github/sunjirapath/slipverify/slipok/SlipOkProvider : io/g
 	public fun <init> (Lio/github/sunjirapath/slipverify/slipok/SlipOkConfig;Lio/github/sunjirapath/slipverify/provider/ProviderHttp;)V
 	public synthetic fun <init> (Lio/github/sunjirapath/slipverify/slipok/SlipOkConfig;Lio/github/sunjirapath/slipverify/provider/ProviderHttp;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getName ()Ljava/lang/String;
+	public final fun quota ()Lio/github/sunjirapath/slipverify/slipok/SlipOkQuota;
 	public fun supports (Lio/github/sunjirapath/slipverify/SlipType;)Z
 	public fun toString ()Ljava/lang/String;
 	public fun verify (Lio/github/sunjirapath/slipverify/ProviderQuery;)Lio/github/sunjirapath/slipverify/ProviderOutcome;
+}
+
+public final class io/github/sunjirapath/slipverify/slipok/SlipOkQuota {
+	public fun <init> (IIILjava/time/LocalDate;)V
+	public final fun getEndDate ()Ljava/time/LocalDate;
+	public final fun getOverQuota ()I
+	public final fun getRemaining ()I
+	public final fun getSpecialRemaining ()I
+	public fun toString ()Ljava/lang/String;
 }
 
