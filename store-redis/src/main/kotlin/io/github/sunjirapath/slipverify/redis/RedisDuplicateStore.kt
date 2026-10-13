@@ -43,13 +43,26 @@ public class RedisDuplicateStore private constructor(
 
         /** Opens its own client from a URI such as `redis://:password@host:6379/0`. Close the store when done. */
         @JvmStatic
-        public fun connect(redisUri: String): RedisDuplicateStore {
-            val client = RedisClient.create(redisUri)
-            val connection: StatefulRedisConnection<String, String> = client.connect()
-            return RedisDuplicateStore(connection.sync(), {
-                connection.close()
-                client.shutdown()
-            })
+        public fun connect(redisUri: String): RedisDuplicateStore = connect(RedisClient.create(redisUri))
+
+        internal fun connect(client: RedisClient): RedisDuplicateStore {
+            try {
+                val connection: StatefulRedisConnection<String, String> = client.connect()
+                return RedisDuplicateStore(connection.sync(), {
+                    client.use { connection.close() }
+                })
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: RuntimeException,
+            ) {
+                try {
+                    client.shutdown()
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") cleanup: RuntimeException,
+                ) {
+                    e.addSuppressed(cleanup)
+                }
+                throw e
+            }
         }
     }
 }

@@ -9,7 +9,10 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import java.util.concurrent.TimeUnit
 
-/** Receives measurements. Free of Micrometer types so the starter works without Micrometer. */
+/**
+ * Receives measurements. Free of Micrometer types so the starter works without Micrometer.
+ * Runtime exceptions from callbacks are ignored; telemetry cannot change verification or provider outcomes.
+ */
 public interface SlipMetrics {
     public fun verification(result: SlipVerificationResult)
 
@@ -85,9 +88,20 @@ internal class MeteredSlipProvider(
             outcome = result.kind.name
             return result
         } finally {
-            metrics.providerCall(delegate.name, outcome, System.nanoTime() - start)
+            recordMetrics { metrics.providerCall(delegate.name, outcome, System.nanoTime() - start) }
         }
     }
 
     override fun toString(): String = "Metered($delegate)"
+}
+
+/** Telemetry must not discard a paid provider result or a completed duplicate mark. */
+internal fun recordMetrics(record: () -> Unit) {
+    try {
+        record()
+    } catch (
+        @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
+    ) {
+        // Best effort: callback messages may contain slip data, so neither log nor expose them.
+    }
 }

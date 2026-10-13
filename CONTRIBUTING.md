@@ -36,6 +36,31 @@ Useful extras:
 Rules that CI enforces: formatting, zero detekt findings, zero compiler warnings, no public API change without an
 updated `.api` file, `core` depends on `promptparse` only.
 
+## Dependency verification
+
+The wrapper distribution is pinned by `distributionSha256Sum` in `gradle/wrapper/gradle-wrapper.properties`.
+On a Gradle upgrade, use the SHA-256 published at the distribution URL plus `.sha256`; do not copy a hash from an
+unrelated site. `gradle/verification-metadata.xml` enables strict SHA-256 verification for downloaded libraries,
+plugins and their metadata. Locally built project artifacts are outside that verification scope.
+
+Adding or upgrading a dependency needs a reviewed checksum update. To capture the artifacts used by all checks,
+formatters and generated documentation:
+
+```bash
+./gradlew --write-verification-metadata sha256 spotlessCheck check dokkaGeneratePublicationHtml
+git diff -- gradle/verification-metadata.xml
+./gradlew check --dependency-verification strict
+```
+
+Generating hashes is bootstrapping, not proof of trust: it also hashes artifacts already in the local cache.
+Check every added artifact against Maven Central or the Gradle Plugin Portal over HTTPS. Prefer upstream SHA-256;
+when only a legacy SHA-1 is published, cross-check the downloaded artifact and keep its SHA-256 pin. If no checksum
+is published, fetch the artifact independently from its configured repository and compare SHA-256. Reject any
+unexpected artifact or mismatch; do not bypass verification with wildcard trust rules or disable verification.
+Generated documentation is included because its dependencies can be resolved only when those tasks execute.
+
+See [Gradle dependency verification](https://docs.gradle.org/current/userguide/dependency_verification.html).
+
 ## Test data: no real slips, ever
 
 - Build slips with `SlipVerify.build(...)` / `buildTrueMoney(...)` and render them with `SlipImages` (Java2D + ZXing).

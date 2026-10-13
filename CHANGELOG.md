@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Fixed
 
+- Reject nonpositive provider-confirmed amounts before duplicate marking.
+- Isolate metrics callback failures from verification and provider fallback.
+- Fail startup for unknown duplicate-store settings instead of falling back to memory.
+- Shut down owned Redis clients on connection failure and when connection close fails.
+- Verify starter behavior with optional provider, Redis, Micrometer and web integrations absent.
+- Pin the Gradle distribution checksum and enable native SHA-256 dependency verification.
+- Update README compatibility/security badges and clarify unpublished artifact status.
+
 - Require provider-confirmed transfer identity to match the submitted QR before accepting or marking a slip;
   missing references fail closed, and mismatches return `TRANSACTION_MISMATCH`.
 - Bound image scans to four workers and eight queued jobs per JVM (`IMAGE_PROCESSING_BUSY` on saturation), remove

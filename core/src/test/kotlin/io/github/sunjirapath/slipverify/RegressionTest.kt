@@ -35,6 +35,25 @@ class RegressionTest {
     }
 
     @Test
+    fun `nonpositive confirmations fail closed before marking with or without an expected amount`() {
+        var marks = 0
+        val store = DuplicateStore { _, _ -> true.also { marks++ } }
+        for (amount in listOf("0", "0.00", "-1", "-0.01")) {
+            for (expected in listOf(null, BigDecimal.TEN)) {
+                val slip = VerifiedSlip(BigDecimal(amount), transRef = "AMOUNT")
+                val result = verifier(slip, store).verify(SlipRequest(payload = Slips.standard("AMOUNT"), expectedAmount = expected))
+                assertEquals(VerificationStatus.ERROR, result.status)
+                assertTrue(result.hasReason(ReasonCode.PROVIDER_ERROR))
+                assertFalse(result.hasReason(ReasonCode.AMOUNT_MISMATCH))
+            }
+        }
+        assertEquals(0, marks)
+        val valid = verifier(VerifiedSlip(BigDecimal("0.01"), transRef = "AMOUNT"), store)
+        assertEquals(VerificationStatus.VALID, valid.verify(SlipRequest(payload = Slips.standard("AMOUNT"))).status)
+        assertEquals(1, marks)
+    }
+
+    @Test
     fun `mismatched and missing identities never mark a slip`() {
         var marks = 0
         val store = DuplicateStore { _, _ -> true.also { marks++ } }
