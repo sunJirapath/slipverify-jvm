@@ -19,9 +19,14 @@ codes**. Java-friendly API, Spring Boot starter included. ตรวจสลิ�
 
 ### Status
 
-Pre-release (`0.1.0-SNAPSHOT`), **not on Maven Central yet**. Build from source with `./gradlew publishToMavenLocal`.
+`0.1.0` (first release). Group `io.github.sunjirapath`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
+`slipverify-provider-easyslip`, `slipverify-image-zxing`, `slipverify-store-redis`, `slipverify-spring-boot-starter`.
+Until the Maven Central sync finishes you can build from source with `./gradlew publishToMavenLocal`.
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
+
+The Spring Boot starter targets Spring Boot 3 / Java 17. On Spring Boot 4 or an app that wires its own beans, use
+`slipverify-core` plus a provider module directly: they are plain libraries with no Spring dependency.
 
 ### How it works
 
@@ -110,6 +115,27 @@ if (r.getStatus() == VerificationStatus.VALID) { /* credit the order */ }
 ```
 
 See [examples/](examples/) for runnable versions.
+
+### Capping spend and checking your own records first
+
+Providers bill per lookup, so two optional hooks keep a busy till from burning quota:
+
+```java
+SlipVerifier verifier = SlipVerifier.builder()
+    .provider(new SlipOkProvider(slipOkConfig))
+    // 1. Free check against your own database BEFORE any provider is asked (INVALID + DUPLICATE on a hit).
+    .knownSlips((type, sendingBank, transRef) -> slipRepository.exists(sendingBank, transRef))
+    // 2. A hard cap: reserve before each provider call, settle with what the provider reported.
+    .quotaGuard(new QuotaGuard() {
+      public boolean tryReserve(String provider) { return quota.tryReserve(); }          // false = provider not asked
+      public void settle(String provider, Charge charge) { if (charge == Charge.NO) quota.release(); }
+    })
+    .build();
+```
+
+`Charge.NO` means the provider documents that answer as free, so the reservation can be returned; `YES` and `UNKNOWN`
+(for example a timeout) keep it. A guard that throws is treated as "cap reached" because failing open would spend money.
+Make `tryReserve` atomic (one conditional `UPDATE`, or `INCR` with a limit) so concurrent requests cannot overshoot.
 
 ### Frontend snippet (JavaScript)
 
