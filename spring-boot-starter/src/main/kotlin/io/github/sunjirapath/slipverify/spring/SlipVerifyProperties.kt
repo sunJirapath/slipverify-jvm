@@ -24,6 +24,9 @@ public class SlipVerifyProperties {
     public val slipok: SlipOk = SlipOk()
     public val web: Web = Web()
 
+    /** Time zone for every `bill-cutoff` (billing rounds are calendar days in this zone). */
+    public var billZone: String = "Asia/Bangkok"
+
     public class Duplicate {
         public var enabled: Boolean = true
 
@@ -48,10 +51,26 @@ public class SlipVerifyProperties {
         }
     }
 
+    /** Request caps for one provider. Unset means unlimited. */
+    public class Limit {
+        /** Provider calls allowed per billing round; resets on `bill-cutoff`, so that must be set too. */
+        public var maxPerCycle: Long? = null
+
+        /** Provider calls allowed per clock minute. */
+        public var maxPerMinute: Long? = null
+    }
+
     public class EasySlip {
         /** Setting this enables the provider. */
         public var apiKey: String? = null
         public var baseUrl: String = "https://api.easyslip.com/v2"
+
+        /**
+         * Billing round reset: a day of the month (`13`) or the next billing date (`2026-11-13`, `13/11/2026`),
+         * which means "resets every 13th".
+         */
+        public var billCutoff: String? = null
+        public val limit: Limit = Limit()
         public var requestTimeout: Duration = Duration.ofSeconds(DEFAULT_REQUEST_SECONDS)
         public var connectTimeout: Duration = Duration.ofSeconds(DEFAULT_CONNECT_SECONDS)
         public var checkDuplicate: Boolean = false
@@ -67,6 +86,19 @@ public class SlipVerifyProperties {
         public var apiKey: String? = null
         public var branchId: String? = null
         public var baseUrl: String = "https://api.slipok.com/api/line/apikey"
+
+        /**
+         * Your full endpoint, branch id included: `https://api.slipok.com/api/line/apikey/<YOUR_BRANCH_ID>`.
+         * Replaces [baseUrl] and [branchId] when set.
+         */
+        public var url: String? = null
+
+        /**
+         * Billing round reset: a day of the month (`13`) or the next billing date (`2026-11-13`, `13/11/2026`),
+         * which means "resets every 13th".
+         */
+        public var billCutoff: String? = null
+        public val limit: Limit = Limit()
         public var requestTimeout: Duration = Duration.ofSeconds(DEFAULT_REQUEST_SECONDS)
         public var connectTimeout: Duration = Duration.ofSeconds(DEFAULT_CONNECT_SECONDS)
         public var log: Boolean = false

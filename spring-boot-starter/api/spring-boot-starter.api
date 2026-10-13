@@ -29,6 +29,7 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyAutoConfigu
 	public final fun slipDuplicateStore (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/DuplicateStore;
 	public final fun slipMetrics ()Lio/github/sunjirapath/slipverify/spring/SlipMetrics;
 	public final fun slipQrExtractor (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/QrExtractor;
+	public final fun slipQuotaGuard (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;)Lio/github/sunjirapath/slipverify/QuotaGuard;
 	public final fun slipVerificationService (Lio/github/sunjirapath/slipverify/SlipVerifier;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;)Lio/github/sunjirapath/slipverify/spring/SlipVerificationService;
 	public final fun slipVerifier (Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/QrExtractor;Lorg/springframework/beans/factory/ObjectProvider;Lio/github/sunjirapath/slipverify/spring/SlipMetrics;Lorg/springframework/beans/factory/ObjectProvider;Lorg/springframework/beans/factory/ObjectProvider;)Lio/github/sunjirapath/slipverify/SlipVerifier;
 }
@@ -57,6 +58,7 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyController 
 
 public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties {
 	public fun <init> ()V
+	public final fun getBillZone ()Ljava/lang/String;
 	public final fun getDebug ()Z
 	public final fun getDuplicate ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Duplicate;
 	public final fun getEasyslip ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$EasySlip;
@@ -65,6 +67,7 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties 
 	public final fun getProviderOrder ()Ljava/util/List;
 	public final fun getSlipok ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$SlipOk;
 	public final fun getWeb ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Web;
+	public final fun setBillZone (Ljava/lang/String;)V
 	public final fun setDebug (Z)V
 	public final fun setEnabled (Z)V
 	public final fun setProviderOrder (Ljava/util/List;)V
@@ -89,11 +92,14 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$
 	public fun <init> ()V
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getBillCutoff ()Ljava/lang/String;
 	public final fun getCheckDuplicate ()Z
 	public final fun getConnectTimeout ()Ljava/time/Duration;
+	public final fun getLimit ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Limit;
 	public final fun getRequestTimeout ()Ljava/time/Duration;
 	public final fun setApiKey (Ljava/lang/String;)V
 	public final fun setBaseUrl (Ljava/lang/String;)V
+	public final fun setBillCutoff (Ljava/lang/String;)V
 	public final fun setCheckDuplicate (Z)V
 	public final fun setConnectTimeout (Ljava/time/Duration;)V
 	public final fun setRequestTimeout (Ljava/time/Duration;)V
@@ -112,22 +118,35 @@ public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$
 	public final fun setMaxPixels (J)V
 }
 
+public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Limit {
+	public fun <init> ()V
+	public final fun getMaxPerCycle ()Ljava/lang/Long;
+	public final fun getMaxPerMinute ()Ljava/lang/Long;
+	public final fun setMaxPerCycle (Ljava/lang/Long;)V
+	public final fun setMaxPerMinute (Ljava/lang/Long;)V
+}
+
 public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$SlipOk {
 	public static final field DEFAULT_CONNECT_SECONDS J
 	public static final field DEFAULT_REQUEST_SECONDS J
 	public fun <init> ()V
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getBillCutoff ()Ljava/lang/String;
 	public final fun getBranchId ()Ljava/lang/String;
 	public final fun getConnectTimeout ()Ljava/time/Duration;
+	public final fun getLimit ()Lio/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Limit;
 	public final fun getLog ()Z
 	public final fun getRequestTimeout ()Ljava/time/Duration;
+	public final fun getUrl ()Ljava/lang/String;
 	public final fun setApiKey (Ljava/lang/String;)V
 	public final fun setBaseUrl (Ljava/lang/String;)V
+	public final fun setBillCutoff (Ljava/lang/String;)V
 	public final fun setBranchId (Ljava/lang/String;)V
 	public final fun setConnectTimeout (Ljava/time/Duration;)V
 	public final fun setLog (Z)V
 	public final fun setRequestTimeout (Ljava/time/Duration;)V
+	public final fun setUrl (Ljava/lang/String;)V
 }
 
 public final class io/github/sunjirapath/slipverify/spring/SlipVerifyProperties$Web {
