@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- Require provider-confirmed transfer identity to match the submitted QR before accepting or marking a slip;
+  missing references fail closed, and mismatches return `TRANSACTION_MISMATCH`.
+- Bound image scans to four workers and eight queued jobs per JVM (`IMAGE_PROCESSING_BUSY` on saturation), remove
+  cancelled queued work, and cap all image variants before allocation.
+- Cancel provider response downloads above 2,000,000 bytes, including chunked responses.
+- Throttle large in-memory duplicate-store cleanup to once per minute while preserving atomic expiry checks.
+- Keep Spring starter tests on Java 17+ in the Java 11 CI matrix entry.
+- Reject provider timestamps more than two minutes in the future (`TIME_IN_FUTURE`), independently of `maxAge`.
+- Synchronize English/Thai release and support documentation; document atomic order credit and durable transfer
+  uniqueness in `docs/PAYMENT_ACCEPTANCE.md`.
+
 ## [0.1.0] - 2026-10-13
 
 First release.

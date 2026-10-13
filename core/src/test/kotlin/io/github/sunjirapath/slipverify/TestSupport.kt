@@ -44,7 +44,24 @@ class FakeProvider(
     override fun verify(query: ProviderQuery): ProviderOutcome {
         calls.incrementAndGet()
         lastQuery = query
-        return outcome()
+        val result = outcome()
+        val slip = result.slip ?: return result
+        if (slip.transRef != null) return result
+        val parsed = (SlipPayloads.check(query.payload) as PayloadCheck.Slip).slip
+        return ProviderOutcome.verified(
+            VerifiedSlip(
+                slip.amount,
+                slip.transferTime,
+                slip.senderName,
+                slip.senderAccount,
+                slip.receiverName,
+                slip.receiverAccount,
+                parsed.transRef,
+                parsed.sendingBank,
+                slip.duplicateAtProvider,
+            ),
+            result.charge,
+        )
     }
 }
 

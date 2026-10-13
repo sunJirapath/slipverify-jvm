@@ -114,7 +114,8 @@ SlipVerificationResult r = verifier.verify(new SlipRequest(
 if (r.getStatus() == VerificationStatus.VALID) { /* credit the order */ }
 ```
 
-See [examples/](examples/) for runnable versions.
+See [examples/](examples/) for runnable versions. For crediting orders safely, follow
+[transactional payment acceptance](docs/PAYMENT_ACCEPTANCE.md).
 
 ### Capping spend and checking your own records first
 
@@ -169,14 +170,17 @@ check to pass. Reasons are an enum list; `CRC_AUTOFIXED`, `NO_PROVIDER_CONFIGURE
 
 | Group | Codes |
 |---|---|
-| Input / image | `EMPTY_INPUT`, `INVALID_BASE64`, `UNSUPPORTED_IMAGE_FORMAT` (also HEIC / WebP), `IMAGE_TOO_LARGE`, `IMAGE_DIMENSIONS_TOO_LARGE`, `IMAGE_DECODE_TIMEOUT` |
+| Input / image | `EMPTY_INPUT`, `INVALID_BASE64`, `UNSUPPORTED_IMAGE_FORMAT` (also HEIC / WebP), `IMAGE_TOO_LARGE`, `IMAGE_DIMENSIONS_TOO_LARGE`, `IMAGE_DECODE_TIMEOUT`, `IMAGE_PROCESSING_BUSY` |
 | QR | `NO_QR_FOUND`, `NOT_A_SLIP_QR`, `CRC_INVALID`, `CRC_AUTOFIXED` (info) |
 | Provider | `NO_PROVIDER_CONFIGURED` (info), `PROVIDER_NOT_FOUND`, `PROVIDER_PENDING`, `PROVIDER_AUTH_ERROR`, `PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, `PROVIDER_ERROR`, `PROVIDER_UNSUPPORTED_SLIP_TYPE` |
-| Business | `AMOUNT_MISMATCH`, `RECEIVER_MISMATCH`, `TOO_OLD`, `TIME_UNAVAILABLE`, `DUPLICATE`, `DUPLICATE_STORE_ERROR` |
+| Business | `AMOUNT_MISMATCH`, `RECEIVER_MISMATCH`, `TRANSACTION_MISMATCH`, `TOO_OLD`, `TIME_UNAVAILABLE`, `TIME_IN_FUTURE`, `DUPLICATE`, `DUPLICATE_STORE_ERROR` |
 
 Fallback rules: timeout / network / 5xx → next provider; any 4xx (including 429), "not found" or "pending" → stop.
 Each slip type is only sent to providers that support it. Missing data fails closed (for example `maxAge` without a
-transfer time gives `TIME_UNAVAILABLE`).
+transfer time gives `TIME_UNAVAILABLE`). Provider confirmations must include a transaction reference matching the
+submitted QR; an absent reference gives `ERROR` + `PROVIDER_ERROR`, and a differing reference or sending bank gives
+`INVALID` + `TRANSACTION_MISMATCH`. Future transfer times beyond two minutes of clock skew give `TIME_IN_FUTURE`,
+even when `maxAge` is omitted.
 
 ### Slip type × provider support
 
@@ -194,7 +198,10 @@ Sources and open questions: [docs/RESEARCH.md](docs/RESEARCH.md).
 - API keys come from configuration or the environment. They are never printed, and exceptions carry no message from
   the remote side.
 - Limits before decoding: 5 MB encoded (default), PNG/JPEG magic bytes, pixel and dimension caps read from the
-  header (decompression bombs), a decode timeout.
+  header (decompression bombs), and a decode timeout. Generated variants obey the same dimension/pixel limits.
+  Image scans share four worker threads and a queue of eight jobs per JVM; saturation returns
+  `ERROR` + `IMAGE_PROCESSING_BUSY`. Cancellation is cooperative, so workers remain bounded even if decoding does
+  not stop immediately. Provider responses are limited to 2,000,000 bytes during download.
 - The duplicate store fails closed: if Redis is down the slip is not accepted.
 - The example controller has **no authentication or rate limiting**. It enforces a body size limit and returns generic
   errors; details are logged at DEBUG on the server only.
@@ -210,7 +217,7 @@ Licensed under [Apache-2.0](LICENSE).
 
 ### สถานะ
 
-รุ่นก่อนปล่อย (`0.1.0-SNAPSHOT`) **ยังไม่อยู่บน Maven Central** ใช้ `./gradlew publishToMavenLocal` เพื่อทดลอง
+รุ่นแรก `0.1.0` ระหว่างรอซิงก์ Maven Central ใช้ `./gradlew publishToMavenLocal` เพื่อทดลอง
 รองรับผู้ให้บริการ EasySlip และ SlipOK ส่วน RDCW จะเพิ่มเมื่อมีเอกสารรูปแบบผลลัพธ์ที่สำเร็จ
 
 > **ข้อสงวนสิทธิ์:** โปรเจกต์นี้ไม่มีส่วนเกี่ยวข้องหรือได้รับการรับรองจากธนาคารหรือผู้ให้บริการตรวจสลิปรายใด
@@ -244,6 +251,8 @@ if (r.getStatus() == VerificationStatus.VALID) { /* ยืนยันออเ�
 ### เริ่มต้นใช้งานกับ Java ธรรมดา
 
 ดูตัวอย่างที่รันได้ใน [examples/java](examples/java) และโค้ดเต็มในหัวข้อ English ด้านบน
+รองรับ Spring Boot 3 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 4 ให้ประกอบ core กับ provider เอง
+การบันทึกว่าชำระเงินแล้วต้องทำพร้อมบันทึกรหัสธุรกรรมที่ไม่ซ้ำใน transaction เดียวกัน ดู [แนวทางรับชำระเงิน](docs/PAYMENT_ACCEPTANCE.md)
 
 ### โค้ดฝั่ง frontend
 
@@ -272,4 +281,6 @@ if (r.getStatus() == VerificationStatus.VALID) { /* ยืนยันออเ�
 - API key ต้องมาจาก config หรือ environment เท่านั้น ไม่ปรากฏใน log หรือข้อความ exception
 - ตรวจขนาดไฟล์ ชนิดไฟล์ และขนาดพิกเซลก่อนถอดรหัสรูป เพื่อกัน decompression bomb และมี timeout
 - ถ้า Redis ล่ม สลิปจะไม่ถูกยอมรับ (fail closed)
+- รหัสธุรกรรมจาก provider ต้องตรงกับ QR; ไม่ตรงจะได้ `TRANSACTION_MISMATCH` และเวลาที่ล่วงหน้าเกิน 2 นาทีจะได้ `TIME_IN_FUTURE`
+- งานอ่านรูปใช้ worker 4 threads และคิว 8 งานต่อ JVM; คิวเต็มจะได้ `ERROR` + `IMAGE_PROCESSING_BUSY`
 - controller ตัวอย่าง **ไม่มีระบบยืนยันตัวตนและ rate limit** ต้องเพิ่มเองก่อนเปิดใช้งานจริง

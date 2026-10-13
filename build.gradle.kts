@@ -87,10 +87,11 @@ configure(subprojects.filter { it.name in libraryModules }) {
             if (!providers.gradleProperty("includeLive").isPresent) excludeTags("live")
         }
         if (testJdk != null) {
+            val runtimeJdk = if (project.name == "spring-boot-starter") maxOf(17, testJdk) else testJdk
             javaLauncher =
                 project.extensions
                     .getByType<JavaToolchainService>()
-                    .launcherFor { languageVersion = JavaLanguageVersion.of(testJdk) }
+                    .launcherFor { languageVersion = JavaLanguageVersion.of(runtimeJdk) }
         }
     }
 

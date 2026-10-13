@@ -29,7 +29,7 @@ Useful extras:
 ```bash
 ./gradlew spotlessApply                 # fix formatting
 ./gradlew apiDump                       # accept an intentional public API change (review the diff!)
-./gradlew check -PtestJdk=11            # run the tests on another JDK (11, 17, 21, 25)
+./gradlew check -PtestJdk=11            # Java 11 libraries; the Spring starter stays on Java 17
 ./gradlew :store-redis:test -PincludeLive   # tests tagged "live" (needs REDIS_URL, provider keys)
 ```
 

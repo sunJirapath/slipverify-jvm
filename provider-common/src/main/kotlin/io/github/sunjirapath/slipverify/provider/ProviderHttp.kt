@@ -51,13 +51,14 @@ public class ProviderHttp
     ) {
         public fun send(request: HttpRequest): HttpResult =
             try {
-                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-                val body = response.body() ?: ""
-                if (body.length > MAX_BODY_CHARS) {
-                    HttpResult.failure(ReasonCode.PROVIDER_ERROR)
-                } else {
-                    HttpResult.response(response.statusCode(), body)
-                }
+                val response =
+                    client.send(
+                        request,
+                        HttpResponse.BodyHandler { info ->
+                            LimitedBodySubscriber(HttpResponse.BodyHandlers.ofString().apply(info), MAX_BODY_BYTES)
+                        },
+                    )
+                HttpResult.response(response.statusCode(), response.body() ?: "")
             } catch (
                 @Suppress("SwallowedException") e: HttpConnectTimeoutException,
             ) {
@@ -83,7 +84,7 @@ public class ProviderHttp
             }
 
         public companion object {
-            private const val MAX_BODY_CHARS = 2_000_000
+            private const val MAX_BODY_BYTES = 2_000_000L
             private val DEFAULT_CONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
 
             /** A client that never follows redirects, so a key header cannot be forwarded to another host. */

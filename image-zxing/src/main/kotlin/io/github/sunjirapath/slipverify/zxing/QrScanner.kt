@@ -21,6 +21,7 @@ import java.util.function.Predicate
  */
 internal class QrScanner(
     private val isSlip: Predicate<String>,
+    private val limits: ImageLimits,
 ) {
     val found = LinkedHashSet<String>()
     var slip: String? = null
@@ -77,18 +78,18 @@ internal class QrScanner(
     }
 
     /** Cheap attempts first. Each variant is built lazily so a quick hit costs nothing extra. */
-    private fun variants(src: BufferedImage): Sequence<() -> BufferedImage> =
+    internal fun variants(src: BufferedImage): Sequence<() -> BufferedImage> =
         sequence {
             val longest = maxOf(src.width, src.height)
             val shortest = minOf(src.width, src.height)
             yield { src }
             if (longest > LARGE) {
-                yield { scaleTo(src, LARGE) }
-                yield { scaleTo(src, MEDIUM) }
+                yield { scaleTo(src, LARGE, limits) }
+                yield { scaleTo(src, MEDIUM, limits) }
             }
             if (shortest < SMALL) {
-                yield { scaleBy(src, 2.0) }
-                yield { scaleBy(src, 3.0) }
+                yield { scaleBy(src, 2.0, limits) }
+                yield { scaleBy(src, 3.0, limits) }
             }
             yield { stretchContrast(src) }
             // Slip QR codes sit near the bottom; the crops make the code a bigger share of the frame.
@@ -96,7 +97,7 @@ internal class QrScanner(
             yield { crop(src, 0.5, 0.5, 0.5, 0.5) }
             yield { crop(src, 0.0, 0.66, 1.0, 0.34) }
             yield { crop(src, 0.2, 0.2, 0.6, 0.6) }
-            yield { scaleBy(crop(src, 0.0, 0.5, 1.0, 0.5), 2.0) }
+            yield { scaleBy(crop(src, 0.0, 0.5, 1.0, 0.5), 2.0, limits) }
             for (quarter in 1..3) yield { rotate(src, quarter) }
             yield { rotate(stretchContrast(src), 1) }
         }
@@ -110,28 +111,37 @@ internal class QrScanner(
         fun scaleTo(
             src: BufferedImage,
             longest: Int,
-        ): BufferedImage = scaleBy(src, longest.toDouble() / maxOf(src.width, src.height))
+            limits: ImageLimits,
+        ): BufferedImage = scaleBy(src, longest.toDouble() / maxOf(src.width, src.height), limits)
 
         fun scaleBy(
             src: BufferedImage,
             factor: Double,
+            limits: ImageLimits,
         ): BufferedImage {
             // Shrinking in halves keeps thin QR modules intact better than one big bicubic step.
             var current = src
             var remaining = factor
             while (remaining < 0.5) {
-                current = resample(current, 0.5)
+                current = resample(current, 0.5, limits)
                 remaining /= 0.5
             }
-            return resample(current, remaining)
+            return resample(current, remaining, limits)
         }
 
         fun resample(
             src: BufferedImage,
             factor: Double,
+            limits: ImageLimits,
         ): BufferedImage {
-            val w = maxOf(1, Math.round(src.width * factor).toInt())
-            val h = maxOf(1, Math.round(src.height * factor).toInt())
+            val boundedFactor =
+                minOf(
+                    factor,
+                    limits.maxDimension.toDouble() / maxOf(src.width, src.height),
+                    kotlin.math.sqrt(limits.maxPixels.toDouble() / (src.width.toLong() * src.height)),
+                )
+            val w = maxOf(1, (src.width * boundedFactor).toInt())
+            val h = maxOf(1, (src.height * boundedFactor).toInt())
             val out = BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY)
             val g = out.createGraphics()
             try {

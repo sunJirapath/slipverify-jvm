@@ -11,8 +11,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import io.github.sunjirapath.promptparse.SlipVerify
+import io.github.sunjirapath.slipverify.ExtractionResult
+import io.github.sunjirapath.slipverify.InMemoryDuplicateStore
 import io.github.sunjirapath.slipverify.ProviderOutcomeKind
 import io.github.sunjirapath.slipverify.ProviderQuery
+import io.github.sunjirapath.slipverify.QrExtractor
 import io.github.sunjirapath.slipverify.ReasonCode
 import io.github.sunjirapath.slipverify.SlipRequest
 import io.github.sunjirapath.slipverify.SlipType
@@ -21,6 +24,7 @@ import io.github.sunjirapath.slipverify.VerificationStatus
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
+import java.util.function.Predicate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -80,6 +84,35 @@ class EasySlipProviderTest {
           "rawSlip":{"transactionId":"TM123","date":"2026-10-05T10:15:00+07:00","amount":500.00,
           "sender":{"name":"Test Sender"},"receiver":{"name":"Test Receiver","phone":"xxx-xxx-1234"}}}}
         """.trimIndent()
+
+    @Test
+    fun `image confirmation cannot be replayed using a different submitted wallet QR`() {
+        server.stubFor(post(urlEqualTo("/v2/verify/truewallet")).willReturn(reply(200, trueMoneySuccess)))
+        val realPayload = SlipVerify.buildTrueMoney("P2P", "TM123", "05102026")
+        val extractor =
+            object : QrExtractor {
+                override fun extract(
+                    imageBase64: String,
+                    isSlip: Predicate<String>,
+                ) = ExtractionResult(listOf(realPayload), realPayload, null, byteArrayOf(1, 2, 3))
+            }
+        val v =
+            SlipVerifier
+                .builder()
+                .provider(provider())
+                .qrExtractor(extractor)
+                .duplicateStore(InMemoryDuplicateStore())
+                .build()
+        val real = SlipRequest(imageBase64 = "synthetic-image", payload = realPayload)
+        assertEquals(VerificationStatus.VALID, v.verify(real).status)
+        for (ref in listOf("FAKE1", "FAKE2")) {
+            val request = SlipRequest(imageBase64 = "synthetic-image", payload = SlipVerify.buildTrueMoney("P2P", ref, "05102026"))
+            val result = v.verify(request)
+            assertEquals(VerificationStatus.INVALID, result.status)
+            assertTrue(result.hasReason(ReasonCode.TRANSACTION_MISMATCH))
+        }
+        assertTrue(v.verify(real).hasReason(ReasonCode.DUPLICATE))
+    }
 
     // ---- success ----
 
