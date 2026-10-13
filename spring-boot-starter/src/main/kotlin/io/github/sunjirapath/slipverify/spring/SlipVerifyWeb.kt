@@ -127,7 +127,7 @@ public class RequestSizeLimitFilter(
         val length = request.contentLengthLong
         when {
             length < 0 -> reject(response, HttpStatus.LENGTH_REQUIRED)
-            length > maxBytes -> reject(response, HttpStatus.PAYLOAD_TOO_LARGE)
+            length > maxBytes -> reject(response, HttpStatus.CONTENT_TOO_LARGE)
             else -> chain.doFilter(request, response)
         }
     }
@@ -139,7 +139,7 @@ public class RequestSizeLimitFilter(
         response.status = status.value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.writer.write(
-            """{"error":"${if (status == HttpStatus.PAYLOAD_TOO_LARGE) "too_large" else "length_required"}"}""",
+            """{"error":"${if (status == HttpStatus.CONTENT_TOO_LARGE) "too_large" else "length_required"}"}""",
         )
     }
 
