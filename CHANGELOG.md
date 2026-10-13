@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- `slipverify.<provider>.bill-cutoff` (day of month or next billing date) and `limit.max-per-cycle` /
+  `limit.max-per-minute` per provider, enforced by the new `ConfiguredQuotaGuard`, `BillingCycle` and `ProviderLimit`.
+- `slipverify.slipok.url` accepts the full endpoint including the branch id.
+- `slipverify.bill-zone` (default `Asia/Bangkok`).
+
 ### Fixed
 
 - Reject nonpositive provider-confirmed amounts before duplicate marking.
