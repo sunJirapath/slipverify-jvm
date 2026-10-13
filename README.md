@@ -22,9 +22,9 @@ codes**. Java-friendly API, Spring Boot starter included. ตรวจสลิ�
 
 ### Status
 
-Current source version: `0.1.0`. Group `io.github.sunjirapath`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
+Current version: `0.1.1`. Group `io.github.sunjirapath`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
 `slipverify-provider-easyslip`, `slipverify-image-zxing`, `slipverify-store-redis`, `slipverify-spring-boot-starter`.
-The artifacts are not available on Maven Central yet. Build from source with `./gradlew publishToMavenLocal`.
+The artifacts are published on Maven Central (for example `io.github.sunjirapath:slipverify-core:0.1.1`).
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
 
@@ -224,7 +224,7 @@ Licensed under [Apache-2.0](LICENSE).
 
 ### สถานะ
 
-เวอร์ชันซอร์สปัจจุบัน `0.1.0` ยังไม่อยู่บน Maven Central ใช้ `./gradlew publishToMavenLocal` เพื่อทดลอง
+เวอร์ชันปัจจุบัน `0.1.1` เผยแพร่บน Maven Central แล้ว (เช่น `io.github.sunjirapath:slipverify-core:0.1.1`)
 รองรับผู้ให้บริการ EasySlip และ SlipOK ส่วน RDCW จะเพิ่มเมื่อมีเอกสารรูปแบบผลลัพธ์ที่สำเร็จ
 
 > **ข้อสงวนสิทธิ์:** โปรเจกต์นี้ไม่มีส่วนเกี่ยวข้องหรือได้รับการรับรองจากธนาคารหรือผู้ให้บริการตรวจสลิปรายใด
