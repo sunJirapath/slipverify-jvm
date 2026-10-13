@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-13
+
+### Changed
+
+- **Maven group renamed** from `io.github.sunjirapath` to `io.github.sunjirapath.slipverify`; artifact ids are unchanged. Java/Kotlin package names are unchanged. 0.1.1 remains on Maven Central under the old group.
+
 ## [0.1.1] - 2026-10-13
 
 ### Added
