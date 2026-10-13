@@ -6,7 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-### Added
+## [0.1.0] - 2026-10-13
+
+First release.
+
+### Added in the final pre-release pass
 
 - `slipverify.<provider>.bill-cutoff` (day of month or next billing date) and `limit.max-per-cycle` /
   `limit.max-per-minute` per provider, enforced by the new `ConfiguredQuotaGuard`, `BillingCycle` and `ProviderLimit`.
@@ -18,7 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Breaking for the starter:** `slipverify-spring-boot-starter` now targets Spring Boot 4.1 (was 3.5). Spring Boot 3
   applications should use `slipverify-core` and a provider module directly.
 
-### Fixed
+### Fixed and hardened
 
 - Reject nonpositive provider-confirmed amounts before duplicate marking.
 - Isolate metrics callback failures from verification and provider fallback.
@@ -39,9 +43,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Synchronize English/Thai release and support documentation; document atomic order credit and durable transfer
   uniqueness in `docs/PAYMENT_ACCEPTANCE.md`.
 
-## [0.1.0] - 2026-10-13
-
-First release.
+### Initial feature set
 
 ### Added
 
