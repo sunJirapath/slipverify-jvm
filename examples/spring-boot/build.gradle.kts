@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":provider-easyslip"))
     implementation(libs.spring.boot.starter.web)
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.webmvc.test)
     testImplementation(libs.promptparse)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

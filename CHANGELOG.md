@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [0.1.1] - 2026-10-13
 
+### Added
+
+- `slipverify.<provider>.bill-cutoff` (day of month or next billing date) and `limit.max-per-cycle` /
+  `limit.max-per-minute` per provider, enforced by the new `ConfiguredQuotaGuard`, `BillingCycle` and `ProviderLimit`.
+- `slipverify.slipok.url` accepts the full endpoint including the branch id.
+- `slipverify.bill-zone` (default `Asia/Bangkok`).
+
+### Changed
+
+- **Breaking for the starter:** `slipverify-spring-boot-starter` now targets Spring Boot 4.1 (was 3.5). Spring Boot 3
+  applications should use `slipverify-core` and a provider module directly.
+
 ### Fixed
 
 - Reject nonpositive provider-confirmed amounts before duplicate marking.

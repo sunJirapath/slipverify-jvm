@@ -5,7 +5,7 @@
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FsunJirapath%2Fslipverify-jvm%2Fbadges%2Fcoverage.json)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunJirapath/slipverify-jvm)](LICENSE)
 [![Core Java 11+](https://img.shields.io/badge/Core-Java%2011%2B-blue)](#modules)
-[![Spring Boot 3 / Java 17+](https://img.shields.io/badge/Starter-Spring%20Boot%203%20%2F%20Java%2017%2B-green)](#quick-start-spring-boot)
+[![Spring Boot 4 / Java 17+](https://img.shields.io/badge/Starter-Spring%20Boot%204%20%2F%20Java%2017%2B-green)](#quick-start-spring-boot)
 
 Takes a slip image that your frontend sends as base64, finds the slip's mini QR, parses it with
 [promptparse-jvm](https://github.com/sunJirapath/promptparse-jvm), optionally confirms it with a slip-verification
@@ -28,8 +28,9 @@ The artifacts are published on Maven Central (for example `io.github.sunjirapath
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
 
-The Spring Boot starter targets Spring Boot 3 / Java 17. On Spring Boot 4 or an app that wires its own beans, use
-`slipverify-core` plus a provider module directly: they are plain libraries with no Spring dependency.
+The Spring Boot starter targets Spring Boot 4 / Java 17 (built and tested against 4.1). On Spring Boot 3 or an app that
+wires its own beans, use `slipverify-core` plus a provider module directly: they are plain libraries with no Spring
+dependency.
 
 ### How it works
 
@@ -58,7 +59,7 @@ flowchart LR
 | `provider-easyslip` | `slipverify-provider-easyslip` | [EasySlip](https://document.easyslip.com/en/v2/) API v2 |
 | `provider-slipok` | `slipverify-provider-slipok` | [SlipOK](https://slipok.com/api-documentation/) |
 | `store-redis` | `slipverify-store-redis` | duplicate store on Redis (`SET NX PX`, Lettuce) |
-| `spring-boot-starter` | `slipverify-spring-boot-starter` | auto-config, properties, metrics, example controller (Boot 3, Java 17) |
+| `spring-boot-starter` | `slipverify-spring-boot-starter` | auto-config, properties, metrics, example controller (Boot 4, Java 17) |
 | `examples` | – | plain Java and Spring Boot demos |
 
 `core` depends only on promptparse-jvm. Libraries use Java 11 bytecode; the starter needs Java 17.
@@ -140,6 +141,36 @@ SlipVerifier verifier = SlipVerifier.builder()
 `Charge.NO` means the provider documents that answer as free, so the reservation can be returned; `YES` and `UNKNOWN`
 (for example a timeout) keep it. A guard that throws is treated as "cap reached" because failing open would spend money.
 Make `tryReserve` atomic (one conditional `UPDATE`, or `INCR` with a limit) so concurrent requests cannot overshoot.
+
+### Provider URL, request limits and billing round
+
+Each account has its own endpoint and its own billing round, so both are settings, not code:
+
+```yaml
+slipverify:
+  bill-zone: Asia/Bangkok              # billing days are calendar days in this zone (default)
+  slipok:
+    api-key: ${SLIPOK_API_KEY:}
+    url: https://api.slipok.com/api/line/apikey/<YOUR_BRANCH_ID>   # branch id included; replaces base-url + branch-id
+    bill-cutoff: 13/11/2026            # next billing date (or just 13): the quota resets on the 13th of every month
+    limit:
+      max-per-cycle: 500               # provider calls per billing round; needs bill-cutoff
+      max-per-minute: 30
+  easyslip:
+    api-key: ${EASYSLIP_API_KEY:}
+    bill-cutoff: 1                     # each provider can bill on its own day
+    limit:
+      max-per-cycle: 1000
+```
+
+- `bill-cutoff` takes a day of the month (`13`) or the next billing date (`13/11/2026`, `2026-11-13`), which means "resets
+  every 13th" at 00:00 in `bill-zone`. A cutoff past the end of a short month (31 in April) falls on the last day. Use
+  the Gregorian year, not the Buddhist-era year.
+- Once a provider reaches a limit it is not asked; the verifier moves to the next provider in `provider-order`, or
+  reports `QUOTA_CAPPED` when none is left (the provider is not asked, so no money is spent). Answers the provider documents as free give the unit back.
+- Counts are kept per JVM. With several instances give each its share, or define your own `QuotaGuard` bean (it takes
+  priority). A per-cycle limit without `bill-cutoff`, or an unreadable cutoff, fails startup.
+- Plain Java: `new ConfiguredQuotaGuard(Map.of("slipok", new ProviderLimit(500L, 30L)), Map.of("slipok", BillingCycle.parse("13")))`.
 
 ### Frontend snippet (JavaScript)
 
@@ -258,8 +289,30 @@ if (r.getStatus() == VerificationStatus.VALID) { /* ยืนยันออเ�
 ### เริ่มต้นใช้งานกับ Java ธรรมดา
 
 ดูตัวอย่างที่รันได้ใน [examples/java](examples/java) และโค้ดเต็มในหัวข้อ English ด้านบน
-รองรับ Spring Boot 3 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 4 ให้ประกอบ core กับ provider เอง
+สตาร์เตอร์รองรับ Spring Boot 4 / Java 17 ส่วน core และ provider ใช้ Java 11 ได้ หากใช้ Spring Boot 3 ให้ประกอบ core กับ provider เอง
 การบันทึกว่าชำระเงินแล้วต้องทำพร้อมบันทึกรหัสธุรกรรมที่ไม่ซ้ำใน transaction เดียวกัน ดู [แนวทางรับชำระเงิน](docs/PAYMENT_ACCEPTANCE.md)
+
+### URL ผู้ให้บริการ จำกัดจำนวนเรียก และรอบบิล
+
+แต่ละบัญชีมี URL และรอบบิลของตัวเอง จึงตั้งค่าได้ใน config:
+
+```yaml
+slipverify:
+  bill-zone: Asia/Bangkok              # วันตัดรอบบิลนับตามเขตเวลานี้ (ค่าเริ่มต้น)
+  slipok:
+    api-key: ${SLIPOK_API_KEY:}
+    url: https://api.slipok.com/api/line/apikey/<YOUR_BRANCH_ID>   # ใส่ branch id ใน URL ได้เลย
+    bill-cutoff: 13/11/2026            # วันที่ตัดรอบบิลหน้า (หรือใส่แค่ 13) = โควตารีเซ็ตทุกวันที่ 13
+    limit:
+      max-per-cycle: 500               # จำนวนครั้งที่เรียกต่อรอบบิล (ต้องตั้ง bill-cutoff)
+      max-per-minute: 30
+```
+
+- `bill-cutoff` ใส่วันที่ในเดือน (`13`) หรือวันที่ตัดรอบหน้า (`13/11/2026`, `2026-11-13`) แปลว่ารีเซ็ตทุกวันที่ 13 เวลา 00:00
+  ตาม `bill-zone` ถ้าวันตัดรอบเกินจำนวนวันของเดือน (เช่น 31 ในเดือนเมษายน) จะใช้วันสุดท้ายของเดือน และใช้ปี ค.ศ.
+- เมื่อผู้ให้บริการถึงลิมิตจะไม่ถูกเรียก ระบบสลับไปรายถัดไปใน `provider-order` หรือคืน `QUOTA_CAPPED` (ไม่เรียกผู้ให้บริการ จึงไม่เสียเงิน)
+- ตัวนับอยู่ในแต่ละ JVM หากรันหลายเครื่องให้แบ่งโควตา หรือประกาศ bean `QuotaGuard` เอง (มีลำดับก่อน)
+  ตั้ง `max-per-cycle` โดยไม่มี `bill-cutoff` หรือใส่วันที่ผิดรูปแบบ แอปจะไม่สตาร์ท
 
 ### โค้ดฝั่ง frontend
 

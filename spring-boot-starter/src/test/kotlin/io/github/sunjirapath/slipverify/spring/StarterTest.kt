@@ -279,7 +279,7 @@ class StarterTest {
 
     @Test
     fun `size limit rejects before parsing`() {
-        mvc(maxBytes = 50).perform(json("""{"payload":"${"a".repeat(200)}"}""")).andExpect(status().isPayloadTooLarge).andExpect(jsonPath("$.error").value("too_large"))
+        mvc(maxBytes = 50).perform(json("""{"payload":"${"a".repeat(200)}"}""")).andExpect(status().isContentTooLarge).andExpect(jsonPath("$.error").value("too_large"))
         mvc().perform(mvcPost("/slips/verify").contentType(MediaType.APPLICATION_JSON)).andExpect(status().isLengthRequired)
     }
 

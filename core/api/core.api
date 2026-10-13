@@ -1,3 +1,23 @@
+public final class io/github/sunjirapath/slipverify/BillingCycle {
+	public static final field Companion Lio/github/sunjirapath/slipverify/BillingCycle$Companion;
+	public fun <init> (I)V
+	public fun <init> (ILjava/time/ZoneId;)V
+	public synthetic fun <init> (ILjava/time/ZoneId;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCutoffDay ()I
+	public final fun getZone ()Ljava/time/ZoneId;
+	public final fun nextReset (Ljava/time/Instant;)Ljava/time/Instant;
+	public static final fun parse (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/BillingCycle;
+	public static final fun parse (Ljava/lang/String;Ljava/time/ZoneId;)Lio/github/sunjirapath/slipverify/BillingCycle;
+	public final fun start (Ljava/time/Instant;)Ljava/time/Instant;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/BillingCycle$Companion {
+	public final fun parse (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/BillingCycle;
+	public final fun parse (Ljava/lang/String;Ljava/time/ZoneId;)Lio/github/sunjirapath/slipverify/BillingCycle;
+	public static synthetic fun parse$default (Lio/github/sunjirapath/slipverify/BillingCycle$Companion;Ljava/lang/String;Ljava/time/ZoneId;ILjava/lang/Object;)Lio/github/sunjirapath/slipverify/BillingCycle;
+}
+
 public final class io/github/sunjirapath/slipverify/Charge : java/lang/Enum {
 	public static final field NO Lio/github/sunjirapath/slipverify/Charge;
 	public static final field UNKNOWN Lio/github/sunjirapath/slipverify/Charge;
@@ -5,6 +25,17 @@ public final class io/github/sunjirapath/slipverify/Charge : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/Charge;
 	public static fun values ()[Lio/github/sunjirapath/slipverify/Charge;
+}
+
+public final class io/github/sunjirapath/slipverify/ConfiguredQuotaGuard : io/github/sunjirapath/slipverify/QuotaGuard {
+	public static final field SECONDS_PER_MINUTE J
+	public fun <init> (Ljava/util/Map;)V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;)V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/time/Clock;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun settle (Ljava/lang/String;Lio/github/sunjirapath/slipverify/Charge;)V
+	public fun tryReserve (Ljava/lang/String;)Z
+	public final fun usedThisCycle (Ljava/lang/String;)J
 }
 
 public abstract interface class io/github/sunjirapath/slipverify/DuplicateStore {
@@ -37,6 +68,16 @@ public final class io/github/sunjirapath/slipverify/Masking {
 	public static final fun account (Ljava/lang/String;)Ljava/lang/String;
 	public static final fun name (Ljava/lang/String;)Ljava/lang/String;
 	public static final fun party (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/github/sunjirapath/slipverify/ProviderLimit {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;)V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaxPerCycle ()Ljava/lang/Long;
+	public final fun getMaxPerMinute ()Ljava/lang/Long;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/github/sunjirapath/slipverify/ProviderOutcome {
