@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/codeql.yml/badge.svg)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/codeql.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.sunjirapath.slipverify/slipverify-core)](https://central.sonatype.com/artifact/io.github.sunjirapath.slipverify/slipverify-core)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FsunJirapath%2Fslipverify-jvm%2Fbadges%2Fcoverage.json)](https://github.com/sunJirapath/slipverify-jvm/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sunJirapath/slipverify-jvm)](LICENSE)
 [![Core Java 11+](https://img.shields.io/badge/Core-Java%2011%2B-blue)](#modules)
@@ -20,11 +21,28 @@ codes**. Java-friendly API, Spring Boot starter included. ตรวจสลิ�
 
 ## English
 
-### Status
+### Install
 
-Current version: `0.1.2`. Group `io.github.sunjirapath.slipverify`, artifacts `slipverify-core`, `slipverify-provider-slipok`,
-`slipverify-provider-easyslip`, `slipverify-image-zxing`, `slipverify-store-redis`, `slipverify-spring-boot-starter`.
-The artifacts are published on Maven Central (for example `io.github.sunjirapath.slipverify:slipverify-core:0.1.2`).
+Latest version: **0.1.2**, available on Maven Central. Group `io.github.sunjirapath.slipverify`, artifacts
+`slipverify-core`, `slipverify-provider-slipok`, `slipverify-provider-easyslip`, `slipverify-image-zxing`,
+`slipverify-store-redis`, `slipverify-spring-boot-starter` (see [Modules](#modules)).
+
+```kotlin
+// Gradle (Kotlin DSL)
+dependencies {
+    implementation("io.github.sunjirapath.slipverify:slipverify-core:0.1.2")
+}
+```
+
+```xml
+<!-- Maven -->
+<dependency>
+  <groupId>io.github.sunjirapath.slipverify</groupId>
+  <artifactId>slipverify-core</artifactId>
+  <version>0.1.2</version>
+</dependency>
+```
+
 Providers: EasySlip and SlipOK. RDCW is planned once its success response is documented
 (see [docs/RESEARCH.md](docs/RESEARCH.md)).
 
@@ -68,8 +86,8 @@ flowchart LR
 
 ```kotlin
 dependencies {
-    implementation("io.github.sunjirapath.slipverify:slipverify-spring-boot-starter:<version>")
-    implementation("io.github.sunjirapath.slipverify:slipverify-provider-easyslip:<version>")
+    implementation("io.github.sunjirapath.slipverify:slipverify-spring-boot-starter:0.1.2")
+    implementation("io.github.sunjirapath.slipverify:slipverify-provider-easyslip:0.1.2")
     // optional: slipverify-provider-slipok, slipverify-store-redis
 }
 ```
@@ -244,18 +262,24 @@ Sources and open questions: [docs/RESEARCH.md](docs/RESEARCH.md).
 - Receiver matching works on masked provider data, so it narrows but does not identify an account. Use the
   provider's own account linking for strong guarantees.
 
-### Build
+### Build and contribute
 
-`./gradlew check` (format, detekt, tests, API check, 90% coverage). Gradle verifies downloaded dependencies against
-the committed SHA-256 metadata and pins the wrapper distribution checksum. See [CONTRIBUTING.md](CONTRIBUTING.md)
-for reviewing checksum updates.
-Licensed under [Apache-2.0](LICENSE).
+```
+./gradlew check        # format, detekt, tests, API check, 90% coverage
+```
+
+Gradle verifies downloaded dependencies against the committed SHA-256 metadata and pins the wrapper distribution
+checksum. See [CONTRIBUTING.md](CONTRIBUTING.md) for reviewing checksum updates. Security reports: [SECURITY.md](SECURITY.md).
+
+### License
+
+This project is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE).
 
 ## ภาษาไทย
 
-### สถานะ
+### ติดตั้ง
 
-เวอร์ชันปัจจุบัน `0.1.2` เผยแพร่บน Maven Central แล้ว (เช่น `io.github.sunjirapath.slipverify:slipverify-core:0.1.2`)
+เวอร์ชันล่าสุด **0.1.2** บน Maven Central (เช่น `io.github.sunjirapath.slipverify:slipverify-core:0.1.2`; รายชื่อ artifact ดูที่ [Modules](#modules))
 รองรับผู้ให้บริการ EasySlip และ SlipOK ส่วน RDCW จะเพิ่มเมื่อมีเอกสารรูปแบบผลลัพธ์ที่สำเร็จ
 
 > **ข้อสงวนสิทธิ์:** โปรเจกต์นี้ไม่มีส่วนเกี่ยวข้องหรือได้รับการรับรองจากธนาคารหรือผู้ให้บริการตรวจสลิปรายใด
@@ -344,3 +368,7 @@ slipverify:
 - รหัสธุรกรรมจาก provider ต้องตรงกับ QR; ไม่ตรงจะได้ `TRANSACTION_MISMATCH` และเวลาที่ล่วงหน้าเกิน 2 นาทีจะได้ `TIME_IN_FUTURE`
 - งานอ่านรูปใช้ worker 4 threads และคิว 8 งานต่อ JVM; คิวเต็มจะได้ `ERROR` + `IMAGE_PROCESSING_BUSY`
 - controller ตัวอย่าง **ไม่มีระบบยืนยันตัวตนและ rate limit** ต้องเพิ่มเองก่อนเปิดใช้งานจริง
+
+### สัญญาอนุญาต
+
+โปรเจกต์นี้อยู่ภายใต้ [Apache License 2.0](LICENSE) ดู [NOTICE](NOTICE)
