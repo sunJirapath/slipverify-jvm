@@ -15,7 +15,7 @@ promptparse = "0.1.1"
 zxing = "3.5.4"
 gson = "2.14.0"
 wiremock = "3.13.2"
-lettuce = "7.8.0.RELEASE"
+lettuce = "7.9.0.RELEASE"
 springBoot = "4.1.1"
 micrometer = "1.17.1"
 
