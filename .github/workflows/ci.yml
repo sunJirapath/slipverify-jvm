@@ -38,6 +38,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # The self-hosted runner image has no fonts/freetype; AWT image decoding throws InternalError without them.
+      - name: Install AWT native libs (self-hosted)
+        if: ${{ runner.environment == 'self-hosted' }}
+        run: |
+          command -v fc-list >/dev/null || { SUDO=$(command -v sudo || true)
+            $SUDO apt-get update -q && $SUDO apt-get install -yq --no-install-recommends fontconfig libfreetype6; }
+
       # Gradle itself runs on 21 (the last version listed becomes JAVA_HOME). The compile toolchain is 17
       # and the tests run on the matrix JDK, so all three must be installed.
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
