@@ -19,7 +19,7 @@ env:
 jobs:
   check:
     name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && fromJSON('["self-hosted","pc-builder"]') || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -109,7 +109,7 @@ jobs:
     name: Publish coverage badge
     needs: check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pc-builder]
     timeout-minutes: 15
     permissions:
       contents: write # only this job may push, and only to the badges branch
