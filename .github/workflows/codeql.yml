@@ -18,7 +18,7 @@ jobs:
     # Code scanning on a private repository needs GitHub Advanced Security. Skip (do not fail) until the
     # repository is public.
     if: ${{ !github.event.repository.private }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pc-builder]
     timeout-minutes: 30
     permissions:
       contents: read
@@ -43,8 +43,9 @@ jobs:
           languages: java-kotlin
           build-mode: manual
 
+      # CodeQL must see real compiler runs; cached or up-to-date tasks leave its database empty.
       - name: Compile (no tests)
-        run: ./gradlew compileKotlin :examples:java:compileJava :examples:spring-boot:compileJava --no-daemon --console=plain -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
+        run: ./gradlew compileKotlin :examples:java:compileJava :examples:spring-boot:compileJava --rerun-tasks --no-build-cache --no-daemon --console=plain -Porg.gradle.java.installations.fromEnv=JAVA_HOME_17_X64,JAVA_HOME_21_X64
 
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:

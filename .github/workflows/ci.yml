@@ -19,7 +19,7 @@ env:
 jobs:
   check:
     name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && fromJSON('["self-hosted","pc-builder"]') || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -37,6 +37,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # The self-hosted runner image has no fonts/freetype; AWT image decoding throws InternalError without them.
+      - name: Install AWT native libs (self-hosted)
+        if: ${{ runner.environment == 'self-hosted' }}
+        run: |
+          command -v fc-list >/dev/null || { SUDO=$(command -v sudo || true)
+            $SUDO apt-get update -q && $SUDO apt-get install -yq --no-install-recommends fontconfig libfreetype6; }
 
       # Gradle itself runs on 21 (the last version listed becomes JAVA_HOME). The compile toolchain is 17
       # and the tests run on the matrix JDK, so all three must be installed.
@@ -109,7 +116,7 @@ jobs:
     name: Publish coverage badge
     needs: check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, pc-builder]
     timeout-minutes: 15
     permissions:
       contents: write # only this job may push, and only to the badges branch
