@@ -27,12 +27,13 @@ public final class io/github/sunjirapath/slipverify/Charge : java/lang/Enum {
 	public static fun values ()[Lio/github/sunjirapath/slipverify/Charge;
 }
 
-public final class io/github/sunjirapath/slipverify/ConfiguredQuotaGuard : io/github/sunjirapath/slipverify/QuotaGuard {
+public final class io/github/sunjirapath/slipverify/ConfiguredQuotaGuard : io/github/sunjirapath/slipverify/ReservationQuotaGuard {
 	public static final field SECONDS_PER_MINUTE J
 	public fun <init> (Ljava/util/Map;)V
 	public fun <init> (Ljava/util/Map;Ljava/util/Map;)V
 	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/time/Clock;)V
 	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/time/Clock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun reserve (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/QuotaReservation;
 	public fun settle (Ljava/lang/String;Lio/github/sunjirapath/slipverify/Charge;)V
 	public fun tryReserve (Ljava/lang/String;)Z
 	public final fun usedThisCycle (Ljava/lang/String;)J
@@ -146,6 +147,10 @@ public abstract interface class io/github/sunjirapath/slipverify/QuotaGuard {
 	public abstract fun tryReserve (Ljava/lang/String;)Z
 }
 
+public abstract interface class io/github/sunjirapath/slipverify/QuotaReservation {
+	public abstract fun settle (Lio/github/sunjirapath/slipverify/Charge;)V
+}
+
 public final class io/github/sunjirapath/slipverify/ReasonCode : java/lang/Enum {
 	public static final field AMOUNT_MISMATCH Lio/github/sunjirapath/slipverify/ReasonCode;
 	public static final field CRC_AUTOFIXED Lio/github/sunjirapath/slipverify/ReasonCode;
@@ -191,6 +196,10 @@ public final class io/github/sunjirapath/slipverify/ReceiverRule {
 	public final fun getAccountSuffix ()Ljava/lang/String;
 	public final fun getNameContains ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/sunjirapath/slipverify/ReservationQuotaGuard : io/github/sunjirapath/slipverify/QuotaGuard {
+	public abstract fun reserve (Ljava/lang/String;)Lio/github/sunjirapath/slipverify/QuotaReservation;
 }
 
 public abstract interface class io/github/sunjirapath/slipverify/SlipProvider {

@@ -153,9 +153,9 @@ public class EasySlipProvider
                 amount = amount,
                 transferTime = ThaiTime.parse(Json.string(raw, "date")),
                 senderName = name(raw, "sender"),
-                senderAccount = Json.string(raw, "sender", "account", "bank", "account"),
+                senderAccount = account(raw, "sender"),
                 receiverName = name(raw, "receiver"),
-                receiverAccount = Json.string(raw, "receiver", "account", "bank", "account"),
+                receiverAccount = account(raw, "receiver"),
                 transRef = Json.string(raw, "transRef"),
                 sendingBank = Json.string(raw, "sender", "bank", "id"),
                 duplicateAtProvider = Json.bool(json, "data", "isDuplicate") == true,
@@ -181,6 +181,14 @@ public class EasySlipProvider
             raw: JsonObject?,
             side: String,
         ): String? = Json.string(raw, side, "account", "name", "th") ?: Json.string(raw, side, "account", "name", "en")
+
+        // ReceiverRule is untyped: prefer the bank account; only use the PromptPay proxy when no bank account is supplied.
+        private fun account(
+            raw: JsonObject?,
+            side: String,
+        ): String? =
+            Json.string(raw, side, "account", "bank", "account")
+                ?: Json.string(raw, side, "account", "proxy", "account")
 
         /** Error table from <https://document.easyslip.com/en/reference/error-codes>. */
         private fun parseError(

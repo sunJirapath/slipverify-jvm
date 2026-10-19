@@ -7,7 +7,9 @@ import java.time.Duration
  * What the caller expects of the receiving side. Providers return masked data (`xxx-x-x1234-x`, partial names),
  * so both checks are tolerant (digits of a masked account are compared position by position).
  *
- * @property accountSuffix last digits of the expected receiving account, at least 3.
+ * @property accountSuffix last digits of the expected receiving identifier, at least 3. This rule is untyped:
+ *   EasySlip uses the bank account when supplied, otherwise the PromptPay proxy (such as a phone number).
+ *   A bank account suffix and a proxy suffix are not interchangeable; configure the identifier the provider returns.
  * @property nameContains part of the expected receiver name (Thai or English, titles ignored).
  */
 public class ReceiverRule

@@ -8,7 +8,9 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.format.ResolverStyle
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A monthly billing round that resets on [cutoffDay] at 00:00 in [zone]. A cutoff past the end of a short month
@@ -51,7 +53,10 @@ public class BillingCycle
         public companion object {
             private const val MAX_DAY = 31
             private val DATE_FORMATS =
-                listOf(DateTimeFormatter.ISO_LOCAL_DATE, DateTimeFormatter.ofPattern("d/M/uuuu"))
+                listOf(
+                    DateTimeFormatter.ISO_LOCAL_DATE,
+                    DateTimeFormatter.ofPattern("d/M/uuuu").withResolverStyle(ResolverStyle.STRICT),
+                )
 
             /**
              * Reads `13` (day of month) or a billing date such as `2026-11-13` / `13/11/2026` (its day of month is the
@@ -105,6 +110,10 @@ public class ProviderLimit
  * A [QuotaGuard] that enforces [ProviderLimit]s per provider name. Each provider can follow its own [BillingCycle].
  * Providers without an entry are not limited. Counts live in this JVM: with several instances, give each its share
  * or implement [QuotaGuard] on a shared store.
+ *
+ * [SlipVerifier] uses [reserve] to refund free calls only in their original periods. Direct callers should also
+ * settle the returned receipt. Legacy [tryReserve]/[settle] calls count attempts conservatively: without a receipt,
+ * a concurrent refund cannot safely be attributed, so [settle] retains the reservation even on [Charge.NO].
  */
 public class ConfiguredQuotaGuard
     @JvmOverloads
@@ -112,7 +121,7 @@ public class ConfiguredQuotaGuard
         limits: Map<String, ProviderLimit>,
         cycles: Map<String, BillingCycle> = emptyMap(),
         private val clock: Clock = Clock.systemUTC(),
-    ) : QuotaGuard {
+    ) : ReservationQuotaGuard {
         private val limits = limits.mapKeys { it.key.lowercase() }
         private val cycles = cycles.mapKeys { it.key.lowercase() }
         private val states = ConcurrentHashMap<String, State>()
@@ -132,34 +141,38 @@ public class ConfiguredQuotaGuard
             }
         }
 
-        override fun tryReserve(provider: String): Boolean {
+        override fun tryReserve(provider: String): Boolean = reserve(provider) != null
+
+        override fun reserve(provider: String): QuotaReservation? {
             val key = provider.lowercase()
-            val limit = limits[key] ?: return true
+            val limit = limits[key] ?: return QuotaReservation { }
             val state = states.computeIfAbsent(key) { State() }
             synchronized(state) {
                 roll(state, key, clock.instant())
                 val cycleFull = limit.maxPerCycle?.let { state.cycleCount >= it } ?: false
                 val minuteFull = limit.maxPerMinute?.let { state.minuteCount >= it } ?: false
-                if (cycleFull || minuteFull) return false
+                if (cycleFull || minuteFull) return null
                 state.cycleCount++
                 state.minuteCount++
-                return true
+                val cycleStart = state.cycleStart
+                val minute = state.minute
+                val settled = AtomicBoolean()
+                return QuotaReservation { charge ->
+                    if (settled.compareAndSet(false, true) && charge == Charge.NO) {
+                        synchronized(state) {
+                            roll(state, key, clock.instant())
+                            if (state.cycleStart == cycleStart) state.cycleCount--
+                            if (state.minute == minute) state.minuteCount--
+                        }
+                    }
+                }
             }
         }
 
         override fun settle(
             provider: String,
             charge: Charge,
-        ) {
-            if (charge != Charge.NO) return
-            val key = provider.lowercase()
-            val state = states[key] ?: return
-            synchronized(state) {
-                roll(state, key, clock.instant())
-                if (state.cycleCount > 0) state.cycleCount--
-                if (state.minuteCount > 0) state.minuteCount--
-            }
-        }
+        ): Unit = Unit
 
         /** Calls counted in the current billing round, for dashboards and tests. */
         public fun usedThisCycle(provider: String): Long {

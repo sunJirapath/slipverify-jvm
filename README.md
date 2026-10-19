@@ -189,6 +189,14 @@ slipverify:
 - Counts are kept per JVM. With several instances give each its share, or define your own `QuotaGuard` bean (it takes
   priority). A per-cycle limit without `bill-cutoff`, or an unreadable cutoff, fails startup.
 - Plain Java: `new ConfiguredQuotaGuard(Map.of("slipok", new ProviderLimit(500L, 30L)), Map.of("slipok", BillingCycle.parse("13")))`.
+- `SlipVerifier` settles each `ConfiguredQuotaGuard` reservation with its original minute and billing cycle, so a
+  late free response cannot refund another period. Existing custom `QuotaGuard` implementations keep their two-method
+  contract. Direct callers of the built-in guard should use `QuotaReservation reservation = guard.reserve("slipok")`
+  (`null` means capped), then `reservation.settle(charge)`. Its legacy `tryReserve` / `settle(provider, charge)` path
+  conservatively counts attempts, including free answers, because the provider name alone cannot identify a refund.
+- Receiver `accountSuffix` is an untyped identifier check. EasySlip uses the bank account when present, otherwise
+  the PromptPay proxy account (such as a phone number); TrueMoney uses the wallet phone. A matching proxy does not
+  override a conflicting bank account. Configure the expected suffix for the identifier actually returned.
 
 ### Frontend snippet (JavaScript)
 
@@ -337,6 +345,11 @@ slipverify:
 - เมื่อผู้ให้บริการถึงลิมิตจะไม่ถูกเรียก ระบบสลับไปรายถัดไปใน `provider-order` หรือคืน `QUOTA_CAPPED` (ไม่เรียกผู้ให้บริการ จึงไม่เสียเงิน)
 - ตัวนับอยู่ในแต่ละ JVM หากรันหลายเครื่องให้แบ่งโควตา หรือประกาศ bean `QuotaGuard` เอง (มีลำดับก่อน)
   ตั้ง `max-per-cycle` โดยไม่มี `bill-cutoff` หรือใส่วันที่ผิดรูปแบบ แอปจะไม่สตาร์ท
+- `SlipVerifier` คืนโควตาฟรีตามรอบบิลและนาทีที่จองไว้ แม้คำตอบกลับมาข้ามรอบ ผู้เรียก `ConfiguredQuotaGuard` โดยตรง
+  ควรใช้ `reserve(provider)` แล้วเรียก `settle(charge)` บน receipt ที่ได้ (`null` คือเต็ม) เมธอดเดิม `tryReserve` /
+  `settle(provider, charge)` จะนับทุกครั้งรวมคำตอบฟรี เพราะชื่อ provider อย่างเดียวระบุการจองเดิมไม่ได้
+- `accountSuffix` เทียบรหัสผู้รับโดยไม่แยกชนิด EasySlip ใช้บัญชีธนาคารก่อน หากไม่มีจึงใช้ proxy PromptPay เช่น เบอร์โทร
+  ถ้ามีบัญชีธนาคารที่ไม่ตรง proxy ที่ตรงจะไม่ทำให้ผ่าน ต้องตั้ง suffix ให้ตรงกับรหัสที่ provider ส่งกลับ
 
 ### โค้ดฝั่ง frontend
 

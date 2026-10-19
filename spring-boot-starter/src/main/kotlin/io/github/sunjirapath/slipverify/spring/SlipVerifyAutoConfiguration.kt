@@ -173,6 +173,7 @@ public class SlipVerifyAutoConfiguration {
     public class MicrometerConfiguration {
         @Bean
         @ConditionalOnBean(MeterRegistry::class)
+        @ConditionalOnMissingBean(SlipMetrics::class)
         public fun micrometerSlipMetrics(registry: MeterRegistry): SlipMetrics = MicrometerSlipMetrics(registry)
     }
 
