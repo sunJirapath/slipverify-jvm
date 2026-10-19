@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- Optional `ReservationQuotaGuard` / `QuotaReservation` API to associate each provider call with its own quota refund.
+
+### Fixed
+
+- Preserve Thai combining vowels and tone marks when comparing receiver names, so distinct names cannot collapse.
+- Settle built-in quota receipts only against their original minute and billing period, including out-of-order calls.
+  `SlipVerifier` refunds free calls accurately. Direct legacy `ConfiguredQuotaGuard.tryReserve` / provider-only
+  `settle` calls now conservatively retain attempts, including free answers; use `reserve` and settle its receipt
+  for refunds. Existing custom `QuotaGuard` implementations remain source and binary compatible.
+- Back off Micrometer defaults when the application supplies its own `SlipMetrics` bean.
+- Enforce HTTP request deadlines through response-body completion and cancel stalled subscriptions on JDK 11+.
+- Reject malformed comma grouping in provider amount strings instead of silently changing the monetary value.
+- Read EasySlip proxy-only receiving identifiers, while preferring bank accounts when both are returned. The
+  existing untyped receiver suffix rule also applies to proxy identifiers; bank and proxy suffixes are not interchangeable.
+- Reject impossible billing dates instead of silently clamping them to a different cutoff day.
+
 ## [0.1.2] - 2026-10-13
 
 ### Changed

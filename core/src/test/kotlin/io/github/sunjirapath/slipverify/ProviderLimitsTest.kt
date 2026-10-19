@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ProviderLimitsTest {
@@ -81,11 +82,11 @@ class ProviderLimitsTest {
     fun `minute limit resets every minute and a free answer returns the unit`() {
         val clock = MutableClock(at("2026-10-13T10:00:05Z"))
         val guard = ConfiguredQuotaGuard(mapOf("easyslip" to ProviderLimit(maxPerMinute = 1)), clock = clock)
-        assertTrue(guard.tryReserve("easyslip"))
+        val free = assertNotNull(guard.reserve("easyslip"))
         assertFalse(guard.tryReserve("easyslip"))
-        guard.settle("easyslip", Charge.NO)
-        assertTrue(guard.tryReserve("easyslip"))
-        guard.settle("easyslip", Charge.YES)
+        free.settle(Charge.NO)
+        val paid = assertNotNull(guard.reserve("easyslip"))
+        paid.settle(Charge.YES)
         assertFalse(guard.tryReserve("easyslip"))
         clock.now = at("2026-10-13T10:01:00Z")
         assertTrue(guard.tryReserve("easyslip"))

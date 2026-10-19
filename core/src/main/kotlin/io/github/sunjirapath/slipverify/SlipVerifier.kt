@@ -201,35 +201,41 @@ public class SlipVerifier private constructor(
         reasons: MutableList<ReasonCode>,
     ): ProviderOutcome? {
         val guard = quotaGuard
-        if (guard != null && !reserve(guard, provider)) {
+        val reservation = guard?.let { reserve(it, provider) }
+        if (guard != null && reservation == null) {
             if (ReasonCode.QUOTA_CAPPED !in reasons) reasons += ReasonCode.QUOTA_CAPPED
             return null
         }
         val outcome = safeVerify(provider, query)
-        guard?.let { settle(it, provider, outcome) }
+        reservation?.let { settle(it, outcome) }
         return outcome
     }
 
     private fun reserve(
         guard: QuotaGuard,
         provider: SlipProvider,
-    ): Boolean =
+    ): QuotaReservation? =
         try {
-            guard.tryReserve(provider.name)
+            if (guard is ReservationQuotaGuard) {
+                guard.reserve(provider.name)
+            } else if (guard.tryReserve(provider.name)) {
+                QuotaReservation { charge -> guard.settle(provider.name, charge) }
+            } else {
+                null
+            }
         } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
         ) {
             // Fail closed: if the cap cannot be consulted, spending money is the worse mistake.
-            false
+            null
         }
 
     private fun settle(
-        guard: QuotaGuard,
-        provider: SlipProvider,
+        reservation: QuotaReservation,
         outcome: ProviderOutcome,
     ) {
         try {
-            guard.settle(provider.name, outcome.charge)
+            reservation.settle(outcome.charge)
         } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException") e: RuntimeException,
         ) {

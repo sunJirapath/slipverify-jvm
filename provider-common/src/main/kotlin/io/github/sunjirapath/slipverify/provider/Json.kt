@@ -14,6 +14,8 @@ import java.time.format.DateTimeParseException
 
 /** Null-safe readers over Gson's tree API: a missing or mistyped field is `null`, never an exception. */
 public object Json {
+    private val GROUPED_DECIMAL = Regex("[+-]?[0-9]{1,3}(,[0-9]{3})+(\\.[0-9]+)?")
+
     /** The object in [text], or `null` if it is not valid JSON or not an object. */
     @JvmStatic
     public fun parseObject(text: String?): JsonObject? {
@@ -59,7 +61,7 @@ public object Json {
         vararg path: String,
     ): Boolean? = primitive(get(root, *path))?.takeIf { it.isBoolean }?.asBoolean
 
-    /** Accepts JSON numbers and numeric strings (`"150.00"`), keeping the exact decimal. */
+    /** Accepts JSON numbers and numeric strings (`"150.00"`, `"1,234.50"`), keeping the exact decimal. */
     @JvmStatic
     public fun decimal(
         root: JsonObject?,
@@ -68,9 +70,19 @@ public object Json {
         val p = primitive(get(root, *path)) ?: return null
         return try {
             when {
-                p.isNumber -> p.asBigDecimal
-                p.isString -> BigDecimal(p.asString.trim().replace(",", ""))
-                else -> null
+                p.isNumber -> {
+                    p.asBigDecimal
+                }
+
+                p.isString -> {
+                    val value = p.asString.trim()
+                    if (',' in value && !GROUPED_DECIMAL.matches(value)) return null
+                    BigDecimal(value.replace(",", ""))
+                }
+
+                else -> {
+                    null
+                }
             }
         } catch (
             @Suppress("SwallowedException") e: NumberFormatException,

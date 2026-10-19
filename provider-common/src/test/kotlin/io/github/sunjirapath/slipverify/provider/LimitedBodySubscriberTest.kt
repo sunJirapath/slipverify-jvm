@@ -22,6 +22,42 @@ class LimitedBodySubscriberTest {
     }
 
     @Test
+    fun `cancellation before subscription arrival cancels the late subscription`() {
+        val subscriber = LimitedBodySubscriber(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), 4)
+        subscriber.cancel()
+        val subscription = Subscription()
+        subscriber.onSubscribe(subscription)
+        subscriber.onNext(listOf(ByteBuffer.wrap(byteArrayOf(97))))
+        subscriber.onComplete()
+        subscriber.onError(java.io.IOException())
+        subscriber.cancel()
+        assertTrue(subscription.cancelled)
+        assertFailsWith<java.util.concurrent.ExecutionException> { subscriber.body.toCompletableFuture().get() }
+    }
+
+    @Test
+    fun `cancellation after a partial body rejects later signals and completed body stays completed`() {
+        val subscriber = LimitedBodySubscriber(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), 4)
+        val subscription = Subscription()
+        subscriber.onSubscribe(subscription)
+        subscriber.onNext(listOf(ByteBuffer.wrap(byteArrayOf(97))))
+        subscriber.cancel()
+        subscriber.onNext(listOf(ByteBuffer.wrap(byteArrayOf(98))))
+        subscriber.onError(java.io.IOException())
+        subscriber.onComplete()
+        assertTrue(subscription.cancelled)
+        assertFailsWith<java.util.concurrent.ExecutionException> { subscriber.body.toCompletableFuture().get() }
+
+        val complete = LimitedBodySubscriber(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), 4)
+        val done = Subscription()
+        complete.onSubscribe(done)
+        complete.onComplete()
+        complete.cancel()
+        assertFalse(done.cancelled)
+        assertEquals("", complete.body.toCompletableFuture().get())
+    }
+
+    @Test
     fun `exact byte limit passes while excess bytes cancel the download`() {
         for (excess in listOf(false, true)) {
             val subscriber = LimitedBodySubscriber(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), 4)
