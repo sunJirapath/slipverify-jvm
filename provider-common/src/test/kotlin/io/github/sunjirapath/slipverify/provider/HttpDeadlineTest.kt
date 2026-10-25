@@ -3,6 +3,7 @@ package io.github.sunjirapath.slipverify.provider
 import io.github.sunjirapath.slipverify.ReasonCode
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.net.SocketException
 import java.net.URI
 import java.net.http.HttpRequest
 import java.time.Duration
@@ -34,7 +35,12 @@ class HttpDeadlineTest {
                             flush()
                         }
                         started.countDown()
-                        input.read() == -1
+                        try {
+                            input.read() == -1
+                        } catch (_: SocketException) {
+                            // Cancellation can reset the peer connection instead of sending EOF.
+                            true
+                        }
                     }
                 }
             try {
