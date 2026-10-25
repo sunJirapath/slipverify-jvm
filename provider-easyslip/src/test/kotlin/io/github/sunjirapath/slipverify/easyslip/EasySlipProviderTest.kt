@@ -17,6 +17,7 @@ import io.github.sunjirapath.slipverify.ProviderOutcomeKind
 import io.github.sunjirapath.slipverify.ProviderQuery
 import io.github.sunjirapath.slipverify.QrExtractor
 import io.github.sunjirapath.slipverify.ReasonCode
+import io.github.sunjirapath.slipverify.ReceiverRule
 import io.github.sunjirapath.slipverify.SlipRequest
 import io.github.sunjirapath.slipverify.SlipType
 import io.github.sunjirapath.slipverify.SlipVerifier
@@ -259,6 +260,100 @@ class EasySlipProviderTest {
     }
 
     // ---- through SlipVerifier ----
+
+    @Test
+    fun `malformed comma amounts never pass an expected amount rule`() {
+        for (amount in listOf("1,50", "15,,0", "150,")) {
+            val body = bankSuccess.replace("150.50", "\"$amount\"")
+            server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, body)))
+            val result =
+                SlipVerifier
+                    .builder()
+                    .provider(provider())
+                    .build()
+                    .verify(SlipRequest(payload = payload, expectedAmount = BigDecimal("150")))
+            assertEquals(VerificationStatus.ERROR, result.status, amount)
+            assertTrue(result.hasReason(ReasonCode.PROVIDER_ERROR))
+        }
+        server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, bankSuccess.replace("150.50", "\"1,234.50\""))))
+        assertEquals(
+            VerificationStatus.VALID,
+            SlipVerifier
+                .builder()
+                .provider(provider())
+                .build()
+                .verify(SlipRequest(payload = payload, expectedAmount = BigDecimal("1234.50")))
+                .status,
+        )
+    }
+
+    @Test
+    fun `proxy-only receiver matches the untyped receiving identifier rule`() {
+        val body = bankSuccess.replace("\"bank\":{\"type\":\"BANKAC\",\"account\":\"xxx-x-x1234-x\"}", "\"proxy\":{\"type\":\"MSISDN\",\"account\":\"xxx-xxx-1234\"}")
+        server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, body)))
+        assertEquals("xxx-xxx-1234", provider().verify(bank()).slip!!.receiverAccount)
+        val verifier = SlipVerifier.builder().provider(provider()).build()
+        assertEquals(VerificationStatus.VALID, verifier.verify(SlipRequest(payload = payload, expectedReceiver = ReceiverRule("1234", "สมชาย"))).status)
+        for (rule in listOf(ReceiverRule("9999"), ReceiverRule("1234", "ศิริชัย"))) {
+            assertTrue(verifier.verify(SlipRequest(payload = payload, expectedReceiver = rule)).hasReason(ReasonCode.RECEIVER_MISMATCH))
+        }
+    }
+
+    @Test
+    fun `bank account takes priority over a conflicting proxy and a masked proxy fails closed`() {
+        val bankAccount = "\"bank\":{\"type\":\"BANKAC\",\"account\":\"xxx-x-x1234-x\"}"
+        val both = bankSuccess.replace(bankAccount, "$bankAccount,\"proxy\":{\"type\":\"MSISDN\",\"account\":\"xxx-xxx-9999\"}")
+        server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, both)))
+        val verifier = SlipVerifier.builder().provider(provider()).build()
+        assertEquals(VerificationStatus.VALID, verifier.verify(SlipRequest(payload = payload, expectedReceiver = ReceiverRule("1234"))).status)
+        assertTrue(verifier.verify(SlipRequest(payload = payload, expectedReceiver = ReceiverRule("9999"))).hasReason(ReasonCode.RECEIVER_MISMATCH))
+        for (account in listOf("xxx-xxx-xxxx", "xxx-xxx-9999", "")) {
+            val proxy = bankSuccess.replace(bankAccount, "\"proxy\":{\"type\":\"MSISDN\",\"account\":\"$account\"}")
+            server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, proxy)))
+            assertTrue(verifier.verify(SlipRequest(payload = payload, expectedReceiver = ReceiverRule("1234"))).hasReason(ReasonCode.RECEIVER_MISMATCH))
+        }
+    }
+
+    @Test
+    fun `a stalled first providers body times out and falls back promptly`() {
+        val slow =
+            com.sun.net.httpserver.HttpServer
+                .create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        slow.createContext("/v2/verify/bank") { exchange ->
+            try {
+                exchange.sendResponseHeaders(200, 2)
+                exchange.responseBody.use { output ->
+                    output.write('{'.code)
+                    output.flush()
+                    Thread.sleep(2000)
+                    output.write('}'.code)
+                }
+            } catch (_: java.io.IOException) {
+                // The body deadline closes the first connection.
+            } finally {
+                exchange.close()
+            }
+        }
+        slow.start()
+        try {
+            server.stubFor(post(urlEqualTo("/v2/verify/bank")).willReturn(reply(200, bankSuccess)))
+            val first = EasySlipProvider(EasySlipConfig("synthetic", "http://127.0.0.1:${slow.address.port}/v2", Duration.ofMillis(300)))
+            val verifier =
+                SlipVerifier
+                    .builder()
+                    .provider(first)
+                    .provider(provider())
+                    .build()
+            val started = System.nanoTime()
+            val result = verifier.verify(SlipRequest(payload = payload))
+            assertEquals(VerificationStatus.VALID, result.status)
+            assertTrue(result.hasReason(ReasonCode.PROVIDER_TIMEOUT))
+            assertTrue((System.nanoTime() - started) / 1_000_000 < 1500)
+            server.verify(1, postRequestedFor(urlEqualTo("/v2/verify/bank")))
+        } finally {
+            slow.stop(0)
+        }
+    }
 
     @Test
     fun `verifier reaches VALID and applies business checks to a documented response`() {

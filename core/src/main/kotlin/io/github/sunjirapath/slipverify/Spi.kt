@@ -63,6 +63,7 @@ public class VerifiedSlip
         public val senderName: String? = null,
         public val senderAccount: String? = null,
         public val receiverName: String? = null,
+        /** Receiving identifier; a bank account, PromptPay proxy or wallet phone, depending on the provider. */
         public val receiverAccount: String? = null,
         /** Required for acceptance; must match the reference parsed from the submitted QR. */
         public val transRef: String? = null,
@@ -175,7 +176,8 @@ public fun interface KnownSlips {
 
 /**
  * Caps how many paid provider calls are made. The verifier calls [tryReserve] right before asking a provider and
- * [settle] with what that provider reported ([ProviderOutcome.charge]). Implementations decide what to do on
+ * [settle] with what that provider reported ([ProviderOutcome.charge]), unless the guard implements
+ * [ReservationQuotaGuard], whose receipt is settled instead. Implementations decide what to do on
  * [Charge.NO] (give the unit back) and on [Charge.YES]/[Charge.UNKNOWN] (keep it). Must be thread-safe; a
  * [tryReserve] that throws counts as "cap reached", because failing open would spend money.
  */
@@ -188,6 +190,20 @@ public interface QuotaGuard {
         provider: String,
         charge: Charge,
     )
+}
+
+/** A reservation tied to one provider call. Settle it once, even when the call failed or threw. */
+public fun interface QuotaReservation {
+    public fun settle(charge: Charge)
+}
+
+/**
+ * Optional extension for guards that must associate refunds with the exact reservation (for example billing
+ * periods). The verifier uses [reserve] instead of the legacy provider-only methods when this is implemented.
+ */
+public interface ReservationQuotaGuard : QuotaGuard {
+    /** Reserves one call, or returns `null` when the provider must not be asked. */
+    public fun reserve(provider: String): QuotaReservation?
 }
 
 /**

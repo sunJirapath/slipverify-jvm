@@ -1,7 +1,6 @@
 package io.github.sunjirapath.slipverify.provider
 
 import io.github.sunjirapath.slipverify.ReasonCode
-import java.io.IOException
 import java.net.ConnectException
 import java.net.http.HttpClient
 import java.net.http.HttpConnectTimeoutException
@@ -9,6 +8,11 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpTimeoutException
 import java.time.Duration
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * What came back from one HTTP call. Either [status] and [body] are set, or [transportFailure] says why not.
@@ -49,39 +53,63 @@ public class ProviderHttp
     constructor(
         private val client: HttpClient = defaultClient(DEFAULT_CONNECT_TIMEOUT),
     ) {
-        public fun send(request: HttpRequest): HttpResult =
-            try {
-                val response =
-                    client.send(
-                        request,
-                        HttpResponse.BodyHandler { info ->
-                            LimitedBodySubscriber(HttpResponse.BodyHandlers.ofString().apply(info), MAX_BODY_BYTES)
-                        },
-                    )
-                HttpResult.response(response.statusCode(), response.body() ?: "")
+        public fun send(request: HttpRequest): HttpResult {
+            val started = System.nanoTime()
+            val cancelled = AtomicBoolean()
+            val body = AtomicReference<LimitedBodySubscriber>()
+            val response =
+                client.sendAsync(
+                    request,
+                    HttpResponse.BodyHandler { info ->
+                        LimitedBodySubscriber(HttpResponse.BodyHandlers.ofString().apply(info), MAX_BODY_BYTES).also {
+                            body.set(it)
+                            if (cancelled.get()) it.cancel()
+                        }
+                    },
+                )
+
+            fun cancel() {
+                cancelled.set(true)
+                // Cancelling only the response future does not stop a body download on JDK 11.
+                body.get()?.cancel()
+                response.cancel(true)
+            }
+            return try {
+                val timeout =
+                    request
+                        .timeout()
+                        .orElse(null)
+                        ?.coerceAtMost(Duration.ofNanos(Long.MAX_VALUE))
+                        ?.toNanos()
+                val result =
+                    if (timeout == null) {
+                        response.get()
+                    } else {
+                        val remaining = timeout - (System.nanoTime() - started)
+                        if (remaining <= 0) throw TimeoutException()
+                        response.get(remaining, TimeUnit.NANOSECONDS)
+                    }
+                HttpResult.response(result.statusCode(), result.body() ?: "")
             } catch (
-                @Suppress("SwallowedException") e: HttpConnectTimeoutException,
+                @Suppress("SwallowedException") e: TimeoutException,
             ) {
-                HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT, notSent = true)
-            } catch (
-                @Suppress("SwallowedException") e: HttpTimeoutException,
-            ) {
+                cancel()
                 HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT)
-            } catch (
-                @Suppress("SwallowedException") e: ConnectException,
-            ) {
-                HttpResult.failure(ReasonCode.PROVIDER_ERROR, notSent = true)
-            } catch (
-                @Suppress("SwallowedException") e: IOException,
-            ) {
-                // Connect timeouts surface as HttpConnectTimeoutException, a subclass of HttpTimeoutException.
-                HttpResult.failure(ReasonCode.PROVIDER_ERROR)
+            } catch (e: ExecutionException) {
+                when (e.cause) {
+                    is HttpConnectTimeoutException -> HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT, notSent = true)
+                    is HttpTimeoutException -> HttpResult.failure(ReasonCode.PROVIDER_TIMEOUT)
+                    is ConnectException -> HttpResult.failure(ReasonCode.PROVIDER_ERROR, notSent = true)
+                    else -> HttpResult.failure(ReasonCode.PROVIDER_ERROR)
+                }
             } catch (
                 @Suppress("SwallowedException") e: InterruptedException,
             ) {
+                cancel()
                 Thread.currentThread().interrupt()
                 HttpResult.failure(ReasonCode.PROVIDER_ERROR)
             }
+        }
 
         public companion object {
             private const val MAX_BODY_BYTES = 2_000_000L

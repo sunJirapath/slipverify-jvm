@@ -115,7 +115,17 @@ internal object ReceiverMatcher {
                 break
             }
         }
-        return s.filter { it.isLetterOrDigit() }
+        return s.filter { c ->
+            c.isLetterOrDigit() ||
+                when (Character.getType(c)) {
+                    Character.NON_SPACING_MARK.toInt(),
+                    Character.COMBINING_SPACING_MARK.toInt(),
+                    Character.ENCLOSING_MARK.toInt(),
+                    -> true
+
+                    else -> false
+                }
+        }
     }
 
     fun matches(
