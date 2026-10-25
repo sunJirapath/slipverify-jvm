@@ -10,6 +10,8 @@ import subprocess
 import sys
 
 
+# Copies travel into other repos; --version tells which release a copy came from. Bump with each tag.
+VERSION = "0.1.0"
 ROOT = Path(__file__).resolve().parents[1]
 BRAIN = ROOT / "brain"
 FILES = {
@@ -83,6 +85,9 @@ def write_starter(src: Path, target: Path, rel: str, name: str, description: str
             content = content.replace(old, new)
     if rel in ("brain/INDEX.md", "brain/STATE.md"):
         fresh = "No completed work recorded yet." if target.name == "STATE.md" else ""
+        # Initium's own goal is not the new project's goal.
+        content = re.sub(r"^Current goal: .*$", "Current goal: define and verify the smallest project MVP.",
+                         content, flags=re.MULTILINE)
         content = re.sub(re.escape(START) + r".*?" + re.escape(END),
                          START + "\n" + fresh + "\n" + END, content, flags=re.DOTALL)
     elif rel == "brain/DECISIONS.md":
@@ -100,9 +105,9 @@ def adopt(args: argparse.Namespace) -> None:
     origin = subprocess.run(["git", "-C", str(dest), "remote", "get-url", "origin"],
                             capture_output=True, text=True).stdout.strip()
     name = re.split(r"[/:]", origin.rstrip("/"))[-1].removesuffix(".git") or dest.name
-    builds =[f"`{'' if path.parent == dest else 'cd ' + path.parent.name + ' && '}{command}`"
-              for marker, command in BUILDS.items()
-              for path in sorted([dest / marker, *dest.glob(f"*/{marker}")]) if path.is_file()]
+    builds = [f"`{'' if path.parent == dest else 'cd ' + path.parent.name + ' && '}{command}`"
+               for marker, command in BUILDS.items()
+               for path in sorted([dest / marker, *dest.glob(f"*/{marker}")]) if path.is_file()]
     guides = [f"`{guide}`" for guide in GUIDES if (dest / guide).is_file()]
     # Real repos run e.g. `gradlew check` or `mvn -B test` in CI, so point at the workflows as the source of truth.
     ci = [f"`{path.relative_to(dest).as_posix()}`" for path in sorted((dest / ".github/workflows").glob("*.y*ml"))]
@@ -328,6 +333,7 @@ def preflight(_: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action="version", version=f"Initium harness {VERSION}")
     commands = parser.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init", help="Copy starter into a new directory; never copies .git or secrets")
     init.add_argument("name")
