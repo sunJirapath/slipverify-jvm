@@ -96,11 +96,7 @@ def adopt(args: argparse.Namespace) -> None:
     if not (dest / ".git").exists():
         raise ValueError(f"Not a git repository root: {dest} (use init for a new project)")
     added, kept = [], []
-    # A worktree or temp clone has an arbitrary folder name; the origin URL names the real repo.
-    origin = subprocess.run(["git", "-C", str(dest), "remote", "get-url", "origin"],
-                            capture_output=True, text=True).stdout.strip()
-    name = re.split(r"[/:]", origin.rstrip("/"))[-1].removesuffix(".git") or dest.name
-    builds =[f"`{'' if path.parent == dest else 'cd ' + path.parent.name + ' && '}{command}`"
+    builds = [f"`{'' if path.parent == dest else 'cd ' + path.parent.name + ' && '}{command}`"
               for marker, command in BUILDS.items()
               for path in sorted([dest / marker, *dest.glob(f"*/{marker}")]) if path.is_file()]
     guides = [f"`{guide}`" for guide in GUIDES if (dest / guide).is_file()]
@@ -115,11 +111,11 @@ def adopt(args: argparse.Namespace) -> None:
             kept.append(rel)
             continue
         src = ROOT / ("docs/PROJECT.template.md" if rel == "brain/PROJECT.md" else rel)
-        write_starter(src, target, rel, name, args.description, found if rel == "brain/PROJECT.md" else "")
+        write_starter(src, target, rel, dest.name, args.description, found if rel == "brain/PROJECT.md" else "")
         added.append(rel)
     agents = dest / "AGENTS.md"
     if not agents.exists():
-        agents.write_text(f"# {name} agent instructions\n\n{AGENTS_BLOCK}", encoding="utf-8", newline="\n")
+        agents.write_text(f"# {dest.name} agent instructions\n\n{AGENTS_BLOCK}", encoding="utf-8", newline="\n")
         added.append("AGENTS.md")
     elif AGENTS_START in agents.read_text(encoding="utf-8"):
         kept.append("AGENTS.md")
