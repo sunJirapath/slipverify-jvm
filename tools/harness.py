@@ -100,11 +100,8 @@ def adopt(args: argparse.Namespace) -> None:
               for marker, command in BUILDS.items()
               for path in sorted([dest / marker, *dest.glob(f"*/{marker}")]) if path.is_file()]
     guides = [f"`{guide}`" for guide in GUIDES if (dest / guide).is_file()]
-    # Real repos run e.g. `gradlew check` or `mvn -B test` in CI, so point at the workflows as the source of truth.
-    ci = [f"`{path.relative_to(dest).as_posix()}`" for path in sorted((dest / ".github/workflows").glob("*.y*ml"))]
     found = (f"\n## Found in the existing repo\n\n- Candidate checks (unverified; confirm, then edit): "
-             f"{', '.join(builds) or 'none detected'}\n- CI workflows (the commands CI really runs): "
-             f"{', '.join(ci) or 'none'}\n- Existing guidance to follow first: {', '.join(guides) or 'none'}\n")
+             f"{', '.join(builds) or 'none detected'}\n- Existing guidance to follow first: {', '.join(guides) or 'none'}\n")
     for rel in (*ADOPT, "brain/PROJECT.md"):
         target = dest / rel
         if target.exists():
@@ -316,7 +313,7 @@ def preflight(_: argparse.Namespace) -> None:
         errors.append("LICENSE is missing")
     email = subprocess.run(["git", "config", "user.email"], cwd=ROOT, capture_output=True, text=True).stdout
     if not email.strip().endswith("@users.noreply.github.com"):
-        errors.append("git user.email (this clone's config, used for new commits) is not a GitHub noreply address")
+        errors.append("git user.email is not a GitHub noreply address")
     if errors:
         raise ValueError("\n".join(errors))
     print(f"OK: {len(tracked)} tracked files; no secrets, CRLF or ignored files; LICENSE and noreply email set")

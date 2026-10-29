@@ -22,5 +22,4 @@ See [[STATE]] and [[DECISIONS]].
 ## Found in the existing repo
 
 - Candidate checks (unverified; confirm, then edit): `./gradlew test`
-- CI workflows (the commands CI really runs): `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml`
 - Existing guidance to follow first: `AGENTS.md`, `CONTRIBUTING.md`
