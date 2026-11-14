@@ -19,7 +19,7 @@ env:
 jobs:
   check:
     name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os == 'ubuntu-latest' && fromJSON('["self-hosted","pc-builder"]') || matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","pc-builder"]') || 'ubuntu-latest') || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
